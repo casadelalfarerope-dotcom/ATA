@@ -508,10 +508,30 @@
       </div>
 
       <!-- Barra acciones de la clase seleccionada -->
-      <div id="asist-clase-info" style="display:none;margin-bottom:0.75rem;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div id="asist-clase-info" style="display:none;margin-bottom:0.75rem;align-items:center;gap:8px;flex-wrap:wrap;">
         <span id="asist-clase-label" style="font-size:13px;color:var(--text-muted);flex:1;min-width:120px;"></span>
+        <button class="filter-btn" onclick="toggleEditarClase()" title="Editar clase" style="padding:5px 10px;">✏️ Editar</button>
+        <button class="filter-btn" onclick="confirmarEliminarClase()" title="Eliminar clase" style="padding:5px 10px;color:var(--red-text);border-color:var(--red-border);">🗑 Eliminar</button>
         <button class="save-asist-btn" onclick="guardarAsistencia()" id="btn-guardar-asist">Guardar asistencia</button>
         <span class="save-notice" id="save-notice">¡Guardado!</span>
+      </div>
+
+      <!-- Formulario editar clase -->
+      <div id="editar-clase-form" style="display:none;background:var(--surface);border:0.5px solid var(--border-md);border-radius:var(--radius-lg);padding:1rem;margin-bottom:0.75rem;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:0.6rem;color:var(--text);">Editar clase</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Fecha</div>
+            <input type="date" id="ec-fecha" style="padding:7px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;" />
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Tema de la clase</div>
+            <input type="text" id="ec-tema" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;" />
+          </div>
+          <button class="save-asist-btn" onclick="guardarEdicionClase()" id="btn-guardar-edicion">Guardar cambios</button>
+          <button class="filter-btn" onclick="toggleEditarClase()">Cancelar</button>
+        </div>
+        <div id="ec-error" style="font-size:12px;color:var(--red-text);margin-top:6px;display:none;"></div>
       </div>
 
       <!-- Buscador de alumno -->
@@ -1370,6 +1390,67 @@ function onClaseSelect() {
 
 function filtrarAsistencia(q) {
   renderTomarAsistencia(document.getElementById("asist-clase-sel").value, q);
+}
+
+function toggleEditarClase() {
+  const form = document.getElementById("editar-clase-form");
+  const visible = form.style.display !== "none";
+  form.style.display = visible ? "none" : "block";
+  if (!visible) {
+    const fecha = document.getElementById("asist-clase-sel").value;
+    const clase = CLASES.find(c => c.fecha === fecha);
+    document.getElementById("ec-fecha").value = fecha;
+    document.getElementById("ec-tema").value = clase ? clase.tema : "";
+    document.getElementById("ec-error").style.display = "none";
+    document.getElementById("ec-tema").focus();
+    // Cierra nueva clase si estaba abierta
+    document.getElementById("nueva-clase-form").style.display = "none";
+  }
+}
+
+function guardarEdicionClase() {
+  const fechaOld = document.getElementById("asist-clase-sel").value;
+  const fechaNew = document.getElementById("ec-fecha").value;
+  const tema = document.getElementById("ec-tema").value.trim();
+  const errEl = document.getElementById("ec-error");
+  if (!fechaNew) { errEl.textContent = "Selecciona una fecha."; errEl.style.display = "block"; return; }
+  if (!tema) { errEl.textContent = "Ingresa el tema."; errEl.style.display = "block"; return; }
+  errEl.style.display = "none";
+  const btn = document.getElementById("btn-guardar-edicion");
+  setBtnLoading(btn, "Guardando...");
+  gasCall({ action: 'editarClase', fechaOld, fechaNew, tema })
+    .then(res => {
+      clearBtnLoading(btn);
+      if (!res.ok) { errEl.textContent = res.error || "Error al guardar."; errEl.style.display = "block"; return; }
+      CLASES = res.clases;
+      if (res.asistencia) ASISTENCIA = res.asistencia;
+      document.getElementById("editar-clase-form").style.display = "none";
+      poblarSelectorClases(fechaNew);
+    })
+    .catch(() => { clearBtnLoading(btn); errEl.textContent = "Error de conexión."; errEl.style.display = "block"; });
+}
+
+function confirmarEliminarClase() {
+  const fecha = document.getElementById("asist-clase-sel").value;
+  const clase = CLASES.find(c => c.fecha === fecha);
+  const nombre = clase ? `${fmtFecha(fecha)} — ${clase.tema}` : fmtFecha(fecha);
+  const ok = confirm(`¿Eliminar la clase "${nombre}"?\n\nATENCIÓN: Se borrarán también todos los registros de asistencia de esa clase. Esta acción no se puede deshacer.`);
+  if (!ok) return;
+  const btn = document.getElementById("btn-guardar-asist");
+  setBtnLoading(btn, "Eliminando...");
+  gasCall({ action: 'eliminarClase', fecha })
+    .then(res => {
+      clearBtnLoading(btn);
+      if (!res.ok) { alert("Error al eliminar: " + (res.error || "")); return; }
+      CLASES = res.clases;
+      if (res.asistencia) ASISTENCIA = res.asistencia;
+      document.getElementById("asist-tomar-list").innerHTML = "";
+      document.getElementById("asist-clase-info").style.display = "none";
+      document.getElementById("asist-buscar-wrap").style.display = "none";
+      document.getElementById("editar-clase-form").style.display = "none";
+      poblarSelectorClases();
+    })
+    .catch(() => { clearBtnLoading(btn); alert("Error de conexión."); });
 }
 
 function toggleNuevaClase() {
