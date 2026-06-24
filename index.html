@@ -84,6 +84,7 @@
     .error-msg { font-size: 13px; color: var(--red-text); margin-top: 8px; min-height: 18px; }
     .login-admin-link { text-align: center; margin-top: 1.25rem; font-size: 13px; color: var(--text-hint); }
     .login-admin-link a { color: var(--text-muted); cursor: pointer; text-decoration: underline; }
+    .login-admin-link a.admin-active { color: var(--clay-mid); font-weight: 500; text-decoration: none; background: var(--amber-bg); padding: 5px 14px; border-radius: var(--radius); border: 0.5px solid var(--amber-border); }
 
     /* DASHBOARD ALUMNO */
     #page-dashboard { padding: 0; max-width: 860px; margin: 0 auto; display: none; }
@@ -289,7 +290,7 @@
     </div>
     <button class="btn-primary" id="login-btn" onclick="handleLoginKey()">Entrar</button>
     <div class="error-msg" id="login-error"></div>
-    <div class="login-admin-link"><a onclick="toggleAdminMode()">Acceso administrador</a></div>
+    <div class="login-admin-link"><a id="admin-toggle-link" onclick="toggleAdminMode()">Acceso administrador</a></div>
   </div>
 </div>
 
@@ -409,10 +410,9 @@
       <div class="empty-state" id="empty-confirmar" style="display:none;">Sin registros en revisión</div>
     </div>
   </div>
-</div>
 
   <!-- TAB ASISTENCIA -->
-  <div id="tab-asistencia" class="tab-content" style="padding: 0 1.5rem;">
+  <div id="tab-asistencia" class="tab-content">
 
     <!-- sub-tabs -->
     <div style="display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap;">
@@ -479,6 +479,7 @@
     </div>
 
   </div>
+</div>
 
 <!-- MODAL EXAMEN -->
 <div class="modal-overlay" id="exam-modal" onclick="if(event.target===this)closeModal()">
@@ -610,12 +611,30 @@ function resetLoginForm() {
   document.getElementById("login-subtitle").textContent = adminMode ? "Ingresa tu DNI de administrador" : "Consulta tus exámenes pendientes y notas";
   document.getElementById("login-btn").textContent = "Entrar";
   document.getElementById("login-btn").onclick = handleLoginKey;
+  const link = document.getElementById("admin-toggle-link");
+  if (link) {
+    if (adminMode) {
+      link.textContent = "← Regresar a acceso alumno";
+      link.classList.add("admin-active");
+    } else {
+      link.textContent = "Acceso administrador";
+      link.classList.remove("admin-active");
+    }
+  }
 }
 
 function toggleAdminMode() {
   adminMode = !adminMode;
   adminLoginStep = 1;
   resetLoginForm();
+  const link = document.getElementById("admin-toggle-link");
+  if (adminMode) {
+    link.textContent = "← Regresar a acceso alumno";
+    link.classList.add("admin-active");
+  } else {
+    link.textContent = "Acceso administrador";
+    link.classList.remove("admin-active");
+  }
 }
 
 /* ══════════════════════════════════════════════
