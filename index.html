@@ -243,8 +243,13 @@
     .copy-toast { font-size: 11px; color: var(--green-text); flex-shrink: 0; display: none; }
 
     .search-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
-    .search-input { padding: 7px 12px; border: 0.5px solid var(--border-md); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: 13px; outline: none; width: 220px; }
+    .search-input { padding: 7px 34px 7px 12px; border: 0.5px solid var(--border-md); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: 13px; outline: none; width: 220px; }
     .search-input:focus { border-color: var(--clay-mid); }
+    .search-wrap { position: relative; display: inline-flex; align-items: center; }
+    .search-wrap .search-input { width: 100%; }
+    .search-clear { position: absolute; right: 7px; background: transparent; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; padding: 2px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+    .search-clear:hover { color: var(--text); }
+    .search-wrap.has-value .search-clear { opacity: 1; pointer-events: auto; }
     .filter-btn { font-size: 12px; padding: 5px 12px; border: 0.5px solid var(--border-md); border-radius: 100px; background: transparent; color: var(--text-muted); cursor: pointer; }
     .filter-btn.active { background: var(--clay); color: #F5E8D2; border-color: var(--clay); }
 
@@ -348,6 +353,7 @@
       /* Filtros wrap */
       .search-row { flex-wrap: wrap; gap: 6px; }
       .search-input { width: 100%; }
+      .search-wrap { width: 100% !important; }
     }
   </style>
 </head>
@@ -441,18 +447,34 @@
 
   <!-- TAB ESTADÍSTICAS -->
   <div id="tab-stats" class="tab-content active">
-    <div class="admin-stats" id="admin-stats-cards"></div>
-    <div class="podio-wrap">
-      <div class="podio-title">Ranking por promedio</div>
-      <div id="podio-container"></div>
+    <div style="display:flex;gap:6px;margin-bottom:1.1rem;flex-wrap:wrap;">
+      <button class="filter-btn active" onclick="switchStatsTab('resumen',this)">Resumen</button>
+      <button class="filter-btn" onclick="switchStatsTab('ranking',this)">Ranking</button>
+      <button class="filter-btn" onclick="switchStatsTab('examenes',this)">Por examen</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;" id="stats-bottom-grid"></div>
+    <div id="stats-panel-resumen">
+      <div class="admin-stats" id="admin-stats-cards"></div>
+    </div>
+    <div id="stats-panel-ranking" style="display:none;">
+      <div class="podio-wrap">
+        <div class="podio-title">Ranking por promedio</div>
+        <div id="podio-container"></div>
+      </div>
+    </div>
+    <div id="stats-panel-examenes" style="display:none;">
+      <div id="stats-bottom-grid"></div>
+    </div>
   </div>
 
   <!-- TAB ALUMNOS -->
   <div id="tab-alumnos" class="tab-content">
     <div class="search-row">
-      <input class="search-input" type="text" placeholder="Buscar alumno..." oninput="filterAlumnos(this.value)" />
+      <div class="search-wrap" style="width:220px;">
+        <input class="search-input" id="search-alumnos" type="text" placeholder="Buscar alumno..." oninput="filterAlumnos(this.value);toggleSearchClear(this)" />
+        <button class="search-clear" onclick="clearSearch('search-alumnos',filterAlumnos)" title="Limpiar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
     <div class="table-wrap">
       <table class="admin-table">
@@ -500,7 +522,12 @@
   <!-- TAB PENDIENTES (para copiar mensaje) -->
   <div id="tab-pending" class="tab-content">
     <div class="search-row">
-      <input class="search-input" type="text" placeholder="Buscar alumno..." oninput="filterPending(this.value)" />
+      <div class="search-wrap" style="width:220px;">
+        <input class="search-input" id="search-pending" type="text" placeholder="Buscar alumno..." oninput="filterPending(this.value);toggleSearchClear(this)" />
+        <button class="search-clear" onclick="clearSearch('search-pending',filterPending)" title="Limpiar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
       <span style="font-size:12px;color:var(--text-muted);">Haz clic en Copiar para enviar el mensaje al alumno</span>
     </div>
     <div id="pending-list"></div>
@@ -516,7 +543,12 @@
         <button class="filter-btn" onclick="filterConfirmar('aprobado', this)">Aprobados</button>
         <button class="filter-btn" onclick="filterConfirmar('desaprobado', this)">Desaprobados</button>
       </div>
-      <input class="search-input" type="text" placeholder="Buscar..." oninput="searchConfirmar(this.value)" />
+      <div class="search-wrap" style="width:220px;">
+        <input class="search-input" id="search-confirmar" type="text" placeholder="Buscar..." oninput="searchConfirmar(this.value);toggleSearchClear(this)" />
+        <button class="search-clear" onclick="clearSearch('search-confirmar',searchConfirmar)" title="Limpiar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
     <div class="table-wrap">
       <table class="admin-table">
@@ -610,7 +642,12 @@
 
       <!-- Buscador de alumno -->
       <div id="asist-buscar-wrap" style="display:none;margin-bottom:0.75rem;">
-        <input class="search-input" type="text" id="asist-buscar" placeholder="Buscar alumno..." oninput="filtrarAsistencia(this.value)" style="width:100%;max-width:320px;" />
+        <div class="search-wrap" style="width:100%;max-width:320px;">
+          <input class="search-input" type="text" id="asist-buscar" placeholder="Buscar alumno..." oninput="filtrarAsistencia(this.value);toggleSearchClear(this)" />
+          <button class="search-clear" onclick="clearSearch('asist-buscar',filtrarAsistencia)" title="Limpiar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
       </div>
 
       <div id="asist-tomar-list"></div>
@@ -1929,6 +1966,31 @@ function renderHistorialFecha() {
 /* ── inicializar tab asistencia ── */
 function initAsistencia() {
   poblarSelectorClases();
+}
+
+/* ── SUB-PESTAÑAS ESTADÍSTICAS ── */
+function switchStatsTab(id, btn) {
+  ['resumen','ranking','examenes'].forEach(p => {
+    document.getElementById('stats-panel-' + p).style.display = p === id ? '' : 'none';
+  });
+  document.querySelectorAll('#tab-stats .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ── BÚSQUEDA: limpiar ── */
+function toggleSearchClear(input) {
+  const wrap = input.closest('.search-wrap');
+  if (wrap) wrap.classList.toggle('has-value', input.value.length > 0);
+}
+
+function clearSearch(inputId, filterFn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.value = '';
+  const wrap = input.closest('.search-wrap');
+  if (wrap) wrap.classList.remove('has-value');
+  filterFn('');
+  input.focus();
 }
 
 /* ── DETALLE DE ALUMNO (modal admin) ── */
