@@ -1,12 +1,1261 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ATA — Portal de Exámenes</title>
-  <style>*{margin:0;padding:0}iframe{width:100vw;height:100vh;border:none;display:block}</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal de Exámenes — Academia Taller del Alfarero</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F2E8D5;
+      --surface: #FDF8EE;
+      --surface2: #EAD9BC;
+      --border: rgba(90,48,12,0.14);
+      --border-md: rgba(90,48,12,0.30);
+      --text: #2A1608;
+      --text-muted: #7A5230;
+      --text-hint: #A07848;
+      --clay: #5C3318;
+      --clay-mid: #8B5A2B;
+      --clay-light: #D4A06A;
+      --cream: #FDF8EE;
+      --nota-bg: #EEE0CC;   --nota-text: #4A2508;
+      --green-bg: #E6F0DA;  --green-text: #274A0A;  --green-border: #3A6418;
+      --amber-bg: #F5E6C2;  --amber-text: #5C3A08;  --amber-border: #8B5A10;
+      --red-bg: #F5DDD8;    --red-text: #6B1E12;    --red-border: #9B2A1E;
+      --radius: 8px; --radius-lg: 14px;
+    }
+    /* tema siempre claro — paleta crema y arcilla */
+
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+
+    header {
+      background: var(--clay); border-bottom: none;
+      padding: 0 1.5rem; height: 58px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 10;
+    }
+    .logo { font-size: 15px; font-weight: 500; letter-spacing: 0.01em; color: #F5E8D2; display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-main { font-size: 17px; font-weight: 600; letter-spacing: 0.04em; color: #F5E8D2; }
+    .logo-sub { font-size: 11px; font-weight: 400; color: rgba(245,232,210,0.65); letter-spacing: 0.06em; text-transform: uppercase; }
+    #header-user { font-size: 13px; color: rgba(245,232,210,0.8); display: flex; align-items: center; gap: 10px; }
+    .hdr-btn {
+      font-size: 12px; padding: 4px 12px; border: 0.5px solid rgba(245,232,210,0.35);
+      border-radius: var(--radius); background: rgba(245,232,210,0.1); color: rgba(245,232,210,0.85); cursor: pointer;
+    }
+    .hdr-btn:hover { background: rgba(245,232,210,0.2); }
+
+    .page { display: none; }
+    .page.active { animation: fadeIn 0.28s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+    /* SPINNERS */
+    .spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; display: inline-block; vertical-align: middle; animation: spin 0.7s linear infinite; }
+    .spinner.dark { border: 2px solid rgba(90,48,12,0.25); border-top-color: var(--clay); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-loading-label { display: inline-flex; align-items: center; gap: 7px; }
+
+    .loading-overlay { position: fixed; inset: 0; background: rgba(242,232,213,0.88); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 14px; z-index: 300; }
+    .loading-overlay.show { display: flex; }
+    .loading-ring { width: 40px; height: 40px; border: 3px solid var(--border-md); border-top-color: var(--clay); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .loading-msg { font-size: 13px; color: var(--text-muted); letter-spacing: 0.02em; }
+
+    .skeleton { background: linear-gradient(90deg, var(--surface2) 25%, #F4E6CC 37%, var(--surface2) 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: var(--radius); }
+    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+    /* LOGIN */
+    #page-login { min-height: calc(100vh - 56px); display: none; align-items: center; justify-content: center; padding: 2rem; }
+    #page-login.active { display: flex; }
+    .login-card { background: var(--surface); border: 0.5px solid var(--border); border-top: 3px solid var(--clay); border-radius: var(--radius-lg); padding: 2rem 2.5rem; width: 100%; max-width: 360px; }
+    .login-logo { font-size: 13px; font-weight: 500; color: var(--clay-mid); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+    .login-logo::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+    .login-card h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
+    .login-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 1.5rem; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+    .field input { width: 100%; padding: 9px 12px; border: 0.5px solid var(--border-md); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: 15px; outline: none; }
+    .field input:focus { border-color: var(--clay-mid); box-shadow: 0 0 0 2px rgba(140,90,40,0.18); }
+    .btn-primary { width: 100%; padding: 10px; background: var(--clay); color: #F5E8D2; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 0.5rem; letter-spacing: 0.02em; }
+    .btn-primary:hover { background: var(--clay-mid); }
+    .btn-primary:disabled { opacity: 0.7; cursor: default; }
+    .error-msg { font-size: 13px; color: var(--red-text); margin-top: 8px; min-height: 18px; }
+    .login-admin-link { text-align: center; margin-top: 1.25rem; font-size: 13px; color: var(--text-hint); }
+    .login-admin-link a { color: var(--text-muted); cursor: pointer; text-decoration: underline; }
+
+    /* DASHBOARD ALUMNO */
+    #page-dashboard { padding: 0; max-width: 860px; margin: 0 auto; display: none; }
+    #page-dashboard.active { display: block; }
+
+    .dash-hero { background: var(--clay); padding: 1.75rem 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .dash-avatar { width: 48px; height: 48px; border-radius: 50%; background: rgba(245,232,210,0.18); border: 1.5px solid rgba(245,232,210,0.35); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: #F5E8D2; flex-shrink: 0; letter-spacing: 0.02em; }
+    .dash-hero-text h2 { font-size: 20px; font-weight: 500; color: #F5E8D2; }
+    .dash-hero-text p { font-size: 13px; color: rgba(245,232,210,0.6); margin-top: 1px; }
+
+    .dash-body { padding: 1.5rem 2rem; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; margin-bottom: 1.75rem; }
+    .stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; border-left: 3px solid transparent; }
+    .stat-card .slabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+    .stat-card .svalue { font-size: 24px; font-weight: 500; }
+    .stat-card.clay  { border-left-color: var(--clay-light); } .stat-card.clay .svalue  { color: var(--clay); }
+    .stat-card.green { border-left-color: var(--green-border); } .stat-card.green .svalue { color: var(--green-text); }
+    .stat-card.amber { border-left-color: var(--amber-border); } .stat-card.amber .svalue { color: var(--amber-text); }
+    .stat-card.red   { border-left-color: var(--red-border); }   .stat-card.red .svalue   { color: var(--red-text); }
+
+    .section-title { font-size: 11px; font-weight: 600; color: var(--clay-mid); text-transform: uppercase; letter-spacing: 0.08em; margin: 1.5rem 0 0.65rem; display: flex; align-items: center; gap: 8px; }
+    .section-title::after { content:''; flex:1; height:0.5px; background: var(--border); }
+
+    .exam-list { display: flex; flex-direction: column; gap: 7px; }
+    .exam-row { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 0.85rem 1.1rem; display: flex; align-items: center; gap: 12px; }
+    .exam-row.clickable { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .exam-row.clickable:hover { border-color: var(--clay-light); background: #FEF9F2; }
+    .exam-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; font-weight: 600; }
+    .exam-icon.done    { background: var(--green-bg); color: var(--green-text); }
+    .exam-icon.missing { background: var(--red-bg);   color: var(--red-text);   }
+    .exam-icon.review  { background: var(--amber-bg); color: var(--amber-text); }
+    .exam-info { flex: 1; min-width: 0; }
+    .exam-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .exam-sub  { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; flex-shrink: 0; letter-spacing: 0.02em; }
+    .badge.done    { background: var(--green-bg); color: var(--green-text); }
+    .badge.missing { background: var(--red-bg);   color: var(--red-text);   }
+    .badge.review  { background: var(--amber-bg); color: var(--amber-text); }
+    .badge.nota { background: var(--nota-bg); color: var(--nota-text); font-size: 13px; font-weight: 600; padding: 3px 11px; }
+    .badge.fail { background: var(--red-bg);  color: var(--red-text);  font-size: 13px; font-weight: 600; padding: 3px 11px; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 1.75rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .modal-title { font-size: 17px; font-weight: 500; }
+    .modal-close { background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); padding: 2px 6px; }
+    .modal-section { margin-bottom: 1.1rem; }
+    .modal-section .mlabel { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .modal-section p { font-size: 14px; line-height: 1.65; color: var(--text-muted); }
+    .btn-take-exam { width: 100%; padding: 11px; background: var(--clay); color: #F5E8D2; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 0.75rem; letter-spacing: 0.02em; }
+    .btn-take-exam:hover { background: var(--clay-mid); }
+    .btn-take-exam:disabled { opacity: 0.75; cursor: default; }
+    .btn-take-exam.disabled { background: var(--surface2); color: var(--text-muted); cursor: default; }
+    .review-notice { background: var(--amber-bg); color: var(--amber-text); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; margin-top: 0.75rem; }
+
+    /* ADMIN */
+    #page-admin { display: none; max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    #page-admin.active { display: block; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 8px; }
+    .admin-header h2 { font-size: 20px; font-weight: 500; }
+
+    .admin-tabs { display: flex; gap: 4px; border-bottom: 0.5px solid var(--border); margin-bottom: 1.5rem; }
+    .tab-btn { font-size: 13px; padding: 8px 16px; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--text-muted); margin-bottom: -0.5px; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--clay); border-bottom-color: var(--clay); font-weight: 500; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Stats */
+    .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 10px; margin-bottom: 1.5rem; }
+    .astat { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; }
+    .astat .alabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .astat .avalue { font-size: 26px; font-weight: 500; }
+    .astat .asub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Tables */
+    .table-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .admin-table th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; border-bottom: 0.5px solid var(--border); background: var(--surface2); }
+    .admin-table td { padding: 10px 12px; border-bottom: 0.5px solid var(--border); vertical-align: middle; white-space: nowrap; }
+    .admin-table td.wrap { white-space: normal; }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: var(--surface2); }
+
+    .nota-input { width: 56px; padding: 4px 6px; border: 0.5px solid var(--border-md); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: 12px; text-align: center; }
+    .action-btn { font-size: 11px; padding: 4px 10px; border-radius: var(--radius); border: 0.5px solid var(--border-md); cursor: pointer; background: transparent; color: var(--text-muted); min-width: 70px; text-align: center; }
+    .action-btn.confirm { border-color: var(--green-border); color: var(--green-text); background: var(--green-bg); }
+    .action-btn.reject { border-color: var(--red-border); color: var(--red-text); background: var(--red-bg); }
+    .action-btn:disabled { opacity: 0.55; cursor: default; }
+    .actions-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+    /* Pending section */
+    .pending-student { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 10px; overflow: hidden; }
+    .pending-student-header { padding: 0.75rem 1rem; background: var(--surface2); border-bottom: 0.5px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .pending-student-name { font-size: 14px; font-weight: 500; }
+    .pending-student-dni { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+    .pending-exam-row { padding: 0.7rem 1rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .pending-exam-row:last-child { border-bottom: none; }
+    .pending-exam-name { font-size: 13px; font-weight: 500; flex: 1; min-width: 160px; }
+    .pending-link { font-size: 12px; color: var(--clay-mid); text-decoration: none; flex: 1; min-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .copy-btn { font-size: 12px; padding: 5px 12px; border: 0.5px solid var(--clay-mid); border-radius: var(--radius); background: var(--clay); color: #F5E8D2; cursor: pointer; flex-shrink: 0; }
+    .copy-btn:hover { background: var(--clay-mid); }
+    .copy-toast { font-size: 11px; color: var(--green-text); flex-shrink: 0; display: none; }
+
+    .search-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+    .search-input { padding: 7px 12px; border: 0.5px solid var(--border-md); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: 13px; outline: none; width: 220px; }
+    .search-input:focus { border-color: var(--clay-mid); }
+    .filter-btn { font-size: 12px; padding: 5px 12px; border: 0.5px solid var(--border-md); border-radius: 100px; background: transparent; color: var(--text-muted); cursor: pointer; }
+    .filter-btn.active { background: var(--clay); color: #F5E8D2; border-color: var(--clay); }
+
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-muted); font-size: 14px; }
+    .avg-pill { display: inline-block; font-size: 13px; font-weight: 500; padding: 2px 10px; border-radius: 100px; }
+    .avg-pill.good { background: var(--green-bg); color: var(--green-text); }
+    .avg-pill.bad { background: var(--red-bg); color: var(--red-text); }
+    .avg-pill.mid { background: var(--amber-bg); color: var(--amber-text); }
+    .avg-pill.none { background: var(--surface2); color: var(--text-muted); }
+
+    /* ── ASISTENCIA ── */
+    .asist-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .asist-bar { flex: 1; height: 8px; background: var(--surface2); border-radius: 100px; overflow: hidden; }
+    .asist-bar-fill { height: 100%; border-radius: 100px; transition: width 0.4s; }
+    .asist-bar-fill.good { background: var(--green-border); }
+    .asist-bar-fill.mid  { background: var(--amber-border); }
+    .asist-bar-fill.bad  { background: var(--red-border); }
+    .asist-pct { font-size: 13px; font-weight: 500; min-width: 38px; text-align: right; }
+    .asist-pct.good { color: var(--green-text); }
+    .asist-pct.mid  { color: var(--amber-text); }
+    .asist-pct.bad  { color: var(--red-text); }
+
+    .asist-legend { display: flex; gap: 14px; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .asist-legend span { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot.p { background: var(--green-border); }
+    .dot.t { background: var(--amber-border); }
+    .dot.a { background: var(--red-border); }
+
+    .asist-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 0.5rem; }
+    .asist-chip { font-size: 10px; padding: 3px 7px; border-radius: var(--radius); font-weight: 500; white-space: nowrap; }
+    .asist-chip.p { background: var(--green-bg); color: var(--green-text); }
+    .asist-chip.t { background: var(--amber-bg); color: var(--amber-text); }
+    .asist-chip.a { background: var(--red-bg); color: var(--red-text); }
+
+    /* tomar asistencia */
+    .asist-take-row { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 0.75rem 1rem; display: flex; align-items: center; gap: 12px; margin-bottom: 7px; flex-wrap: wrap; }
+    .asist-name { font-size: 14px; font-weight: 500; flex: 1; min-width: 160px; }
+    .toggle-group { display: flex; border: 0.5px solid var(--border-md); border-radius: var(--radius); overflow: hidden; flex-shrink: 0; }
+    .toggle-group input[type=radio] { display: none; }
+    .toggle-group label { padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text-muted); background: transparent; transition: background 0.15s, color 0.15s; border-right: 0.5px solid var(--border-md); }
+    .toggle-group label:last-of-type { border-right: none; }
+    .toggle-group input[value=presente]:checked + label { background: var(--green-bg); color: var(--green-text); }
+    .toggle-group input[value=tardanza]:checked + label { background: var(--amber-bg); color: var(--amber-text); }
+    .toggle-group input[value=ausente]:checked + label  { background: var(--red-bg);   color: var(--red-text); }
+
+    .save-asist-btn { padding: 9px 20px; background: var(--clay); color: #F5E8D2; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; }
+    .save-asist-btn:hover { background: var(--clay-mid); }
+    .save-asist-btn:disabled { opacity: 0.75; cursor: default; }
+    .save-notice { font-size: 13px; color: var(--green-text); margin-left: 10px; display: none; }
+
+    /* resumen asistencia admin */
+    .asist-summary-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 0.5px solid var(--border); }
+    .asist-summary-row:last-child { border-bottom: none; }
+    .asist-summary-name { font-size: 13px; font-weight: 500; width: 200px; flex-shrink: 0; }
+    .asist-counts { font-size: 12px; color: var(--text-muted); width: 120px; flex-shrink: 0; }
+
+    @media (max-width: 560px) {
+      #page-dashboard, #page-admin { padding: 1rem; }
+      .login-card { padding: 1.5rem; }
+      .admin-tabs { overflow-x: auto; }
+    }
+  </style>
 </head>
 <body>
-  <iframe src="https://script.google.com/macros/s/AKfycbxJ0olKGZSwIdU18p9QzqGwayfyKDuZ__abCs9B3m709KPRp29klpks2StkyEBIDEK5RA/exec"></iframe>
+
+<header>
+  <div class="logo">
+    <span class="logo-main">ATA</span>
+    <span class="logo-sub">Academia Taller del Alfarero</span>
+  </div>
+  <div id="header-user" style="display:none;">
+    <span id="header-name" style="font-size:13px;color:var(--text-muted);"></span>
+    <button class="hdr-btn" onclick="logout()">Salir</button>
+  </div>
+</header>
+
+<!-- LOGIN -->
+<div id="page-login" class="page active">
+  <div class="login-card">
+    <div class="login-logo">ATA</div>
+    <h1 id="login-title">Ingresa tu DNI</h1>
+    <p id="login-subtitle">Consulta tus exámenes pendientes y notas</p>
+    <div class="field">
+      <label for="dni-input">Número de DNI</label>
+      <input id="dni-input" type="text" inputmode="numeric" maxlength="8" placeholder="12345678"
+        onkeydown="if(event.key==='Enter') handleLoginKey()" />
+    </div>
+    <div class="field" id="pw-field" style="display:none;">
+      <label for="pw-input">Contraseña</label>
+      <input id="pw-input" type="password" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter') doAdminLogin()" />
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="handleLoginKey()">Entrar</button>
+    <div class="error-msg" id="login-error"></div>
+    <div class="login-admin-link"><a onclick="toggleAdminMode()">Acceso administrador</a></div>
+  </div>
+</div>
+
+<!-- DASHBOARD ALUMNO -->
+<div id="page-dashboard" class="page">
+  <div class="dash-hero">
+    <div class="dash-avatar" id="dash-avatar">?</div>
+    <div class="dash-hero-text">
+      <h2 id="dash-name"></h2>
+      <p id="dash-dni"></p>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="section-title">Exámenes completados</div>
+    <div class="exam-list" id="list-done"></div>
+    <div class="section-title">Exámenes pendientes</div>
+    <div class="exam-list" id="list-missing"></div>
+    <div id="section-review" style="display:none;">
+      <div class="section-title">En revisión</div>
+      <div class="exam-list" id="list-review"></div>
+    </div>
+
+    <div class="section-title" style="margin-top:1.5rem;">Asistencia</div>
+    <div id="dash-asist"></div>
+  </div>
+</div>
+
+<!-- PANEL ADMIN -->
+<div id="page-admin" class="page">
+  <div class="admin-header">
+    <div>
+      <h2>Panel de administración</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-top:2px;">Bienvenido, <span id="admin-name"></span></p>
+    </div>
+  </div>
+
+  <div class="admin-tabs" style="margin-top:1.25rem;">
+    <button class="tab-btn active" onclick="switchTab('tab-stats', this)">Estadísticas</button>
+    <button class="tab-btn" onclick="switchTab('tab-alumnos', this)">Alumnos</button>
+    <button class="tab-btn" onclick="switchTab('tab-notas', this)">Notas por examen</button>
+    <button class="tab-btn" onclick="switchTab('tab-pending', this)">Pendientes</button>
+    <button class="tab-btn" onclick="switchTab('tab-confirmar', this)">Confirmar exámenes</button>
+    <button class="tab-btn" onclick="switchTab('tab-asistencia', this)">Asistencia</button>
+  </div>
+
+  <!-- TAB ESTADÍSTICAS -->
+  <div id="tab-stats" class="tab-content active">
+    <div class="admin-stats" id="admin-stats-cards"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;" id="stats-bottom-grid"></div>
+  </div>
+
+  <!-- TAB ALUMNOS -->
+  <div id="tab-alumnos" class="tab-content">
+    <div class="search-row">
+      <input class="search-input" type="text" placeholder="Buscar alumno..." oninput="filterAlumnos(this.value)" />
+    </div>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Alumno</th><th>DNI</th>
+            <th>Exámenes dados</th><th>Pendientes</th><th>En revisión</th><th>Promedio</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-alumnos"></tbody>
+      </table>
+      <div class="empty-state" id="empty-alumnos" style="display:none;">Sin resultados</div>
+    </div>
+  </div>
+
+  <!-- TAB NOTAS POR EXAMEN -->
+  <div id="tab-notas" class="tab-content">
+    <div class="search-row">
+      <select id="select-examen" onchange="renderNotasExamen()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;"></select>
+    </div>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Alumno</th><th>DNI</th><th>Estado</th><th>Nota</th></tr>
+        </thead>
+        <tbody id="tbody-notas"></tbody>
+      </table>
+      <div class="empty-state" id="empty-notas" style="display:none;">Sin datos</div>
+    </div>
+    <div id="notas-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem;"></div>
+  </div>
+
+  <!-- TAB PENDIENTES (para copiar mensaje) -->
+  <div id="tab-pending" class="tab-content">
+    <div class="search-row">
+      <input class="search-input" type="text" placeholder="Buscar alumno..." oninput="filterPending(this.value)" />
+      <span style="font-size:12px;color:var(--text-muted);">Haz clic en Copiar para enviar el mensaje al alumno</span>
+    </div>
+    <div id="pending-list"></div>
+    <div class="empty-state" id="empty-pending" style="display:none;">Todos los alumnos han completado sus exámenes</div>
+  </div>
+
+  <!-- TAB CONFIRMAR -->
+  <div id="tab-confirmar" class="tab-content">
+    <div class="search-row">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="filter-btn active" onclick="filterConfirmar('revision', this)">En revisión</button>
+        <button class="filter-btn" onclick="filterConfirmar('all', this)">Todos</button>
+        <button class="filter-btn" onclick="filterConfirmar('aprobado', this)">Aprobados</button>
+        <button class="filter-btn" onclick="filterConfirmar('desaprobado', this)">Desaprobados</button>
+      </div>
+      <input class="search-input" type="text" placeholder="Buscar..." oninput="searchConfirmar(this.value)" />
+    </div>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Alumno</th><th>DNI</th><th>Examen</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="tbody-confirmar"></tbody>
+      </table>
+      <div class="empty-state" id="empty-confirmar" style="display:none;">Sin registros en revisión</div>
+    </div>
+  </div>
+</div>
+
+  <!-- TAB ASISTENCIA -->
+  <div id="tab-asistencia" class="tab-content">
+
+    <!-- sub-tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap;">
+      <button class="filter-btn active" id="asist-sub-tomar" onclick="switchAsistTab('tomar',this)">Tomar asistencia</button>
+      <button class="filter-btn" id="asist-sub-resumen" onclick="switchAsistTab('resumen',this)">Resumen por alumno</button>
+      <button class="filter-btn" id="asist-sub-historial" onclick="switchAsistTab('historial',this)">Historial de clases</button>
+    </div>
+
+    <!-- Tomar asistencia -->
+    <div id="asist-panel-tomar">
+      <div class="search-row" style="align-items:center;">
+        <label style="font-size:13px;color:var(--text-muted);flex-shrink:0;">Fecha de clase:</label>
+        <input type="date" id="asist-fecha" style="padding:7px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;" onchange="renderTomarAsistencia()" />
+        <button class="save-asist-btn" onclick="guardarAsistencia()">Guardar asistencia</button>
+        <span class="save-notice" id="save-notice">¡Guardado!</span>
+      </div>
+      <div id="asist-tomar-list"></div>
+    </div>
+
+    <!-- Resumen por alumno -->
+    <div id="asist-panel-resumen" style="display:none;">
+      <div class="table-wrap">
+        <div id="asist-resumen-list"></div>
+      </div>
+    </div>
+
+    <!-- Historial de clases -->
+    <div id="asist-panel-historial" style="display:none;">
+      <div class="search-row">
+        <select id="asist-sel-fecha" onchange="renderHistorialFecha()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;"></select>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Alumno</th><th>DNI</th><th>Estado</th></tr></thead>
+          <tbody id="tbody-historial"></tbody>
+        </table>
+        <div class="empty-state" id="empty-historial" style="display:none;">Sin registros para esta fecha</div>
+      </div>
+    </div>
+
+  </div>
+
+<!-- MODAL EXAMEN -->
+<div class="modal-overlay" id="exam-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-section">
+      <div class="mlabel">Resumen de la clase</div>
+      <p id="modal-summary"></p>
+    </div>
+    <div class="modal-section">
+      <div class="mlabel">Enlace al examen</div>
+      <a id="modal-link" href="#" target="_blank" style="font-size:14px;color:var(--clay-mid);word-break:break-all;"></a>
+    </div>
+    <button class="btn-take-exam" id="modal-btn"></button>
+    <div class="review-notice" id="modal-review-notice" style="display:none;">
+      ⏳ Tu examen está en revisión. Nos contactaremos contigo con el resultado.
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY DE CARGA GLOBAL -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-ring"></div>
+  <div class="loading-msg" id="loading-msg">Cargando...</div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   ESTADO — la data real vive en el Google Sheet,
+   se llena tras login vía google.script.run
+══════════════════════════════════════════════ */
+// URL del web app de Google Apps Script (reemplaza si cambia el deployment)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx6zEcpwsjXlfS05GICtL-o3xgRiJGJipQ7Z2-KMq1ML-4RFJSzohc05YiHki4cvBH6ug/exec';
+
+function gasCall(params) {
+  const qs = Object.entries(params)
+    .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(
+      typeof v === 'object' ? JSON.stringify(v) : String(v)
+    )).join('&');
+  return fetch(GAS_URL + '?' + qs).then(r => r.json());
+}
+
+let ALUMNOS = [];
+let EXAMENES = [];
+let REGISTROS = [];
+let ASISTENCIA = [];
+
+let currentUser = null;
+let isAdmin = false;
+let currentExamId = null;
+let adminLoginStep = 1;
+let adminDni = "";
+let adminMode = false;
+
+let confirmarFilter = "revision";
+let confirmarSearch = "";
+
+/* ══════════════════════════════════════════════
+   ANIMACIONES DE CARGA
+══════════════════════════════════════════════ */
+function showLoading(msg) {
+  document.getElementById("loading-msg").textContent = msg || "Cargando...";
+  document.getElementById("loading-overlay").classList.add("show");
+}
+function hideLoading() {
+  document.getElementById("loading-overlay").classList.remove("show");
+}
+
+function setBtnLoading(btn, label) {
+  if (!btn) return;
+  btn.dataset.originalHtml = btn.dataset.originalHtml ?? btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="btn-loading-label"><span class="spinner"></span>${label || "Procesando..."}</span>`;
+}
+function clearBtnLoading(btn) {
+  if (!btn) return;
+  btn.disabled = false;
+  if (btn.dataset.originalHtml !== undefined) btn.innerHTML = btn.dataset.originalHtml;
+}
+
+/* ══════════════════════════════════════════════
+   NAVEGACIÓN
+══════════════════════════════════════════════ */
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(p => {
+    p.style.display = "none";
+    p.classList.remove("active");
+  });
+  const el = document.getElementById(id);
+  if (id === "page-login") { el.style.display = "flex"; }
+  else { el.style.display = "block"; }
+  el.classList.add("active");
+}
+
+function logout() {
+  currentUser = null; isAdmin = false;
+  adminMode = false; adminLoginStep = 1;
+  ALUMNOS = []; EXAMENES = []; REGISTROS = []; ASISTENCIA = [];
+  resetLoginForm();
+  document.getElementById("header-user").style.display = "none";
+  showPage("page-login");
+}
+
+function resetLoginForm() {
+  document.getElementById("dni-input").value = "";
+  document.getElementById("pw-input").value = "";
+  document.getElementById("login-error").textContent = "";
+  document.getElementById("pw-field").style.display = "none";
+  document.getElementById("login-title").textContent = adminMode ? "Acceso administrador" : "Ingresa tu DNI";
+  document.getElementById("login-subtitle").textContent = adminMode ? "Ingresa tu DNI de administrador" : "Consulta tus exámenes pendientes y notas";
+  document.getElementById("login-btn").textContent = "Entrar";
+  document.getElementById("login-btn").onclick = handleLoginKey;
+}
+
+function toggleAdminMode() {
+  adminMode = !adminMode;
+  adminLoginStep = 1;
+  resetLoginForm();
+}
+
+/* ══════════════════════════════════════════════
+   LOGIN (vía google.script.run)
+══════════════════════════════════════════════ */
+function handleLoginKey() {
+  if (adminMode) {
+    if (adminLoginStep === 1) doAdminStep1();
+    else doAdminLogin();
+  } else {
+    doLogin();
+  }
+}
+
+function doLogin() {
+  const dni = document.getElementById("dni-input").value.trim();
+  if (!dni) return;
+  const btn = document.getElementById("login-btn");
+  document.getElementById("login-error").textContent = "";
+  setBtnLoading(btn, "Verificando...");
+
+  gasCall({ action: 'loginAlumno', dni })
+    .then(res => {
+      clearBtnLoading(btn);
+      if (!res.ok) {
+        document.getElementById("login-error").textContent = "DNI no encontrado. Verifica e intenta de nuevo.";
+        return;
+      }
+      currentUser = res.alumno; isAdmin = false;
+      EXAMENES = res.examenes; REGISTROS = res.registros; ASISTENCIA = res.asistencia;
+      document.getElementById("header-user").style.display = "flex";
+      document.getElementById("header-name").textContent = currentUser.nombre;
+      renderDashboard();
+      showPage("page-dashboard");
+    })
+    .catch(err => {
+      clearBtnLoading(btn);
+      document.getElementById("login-error").textContent = "Error de conexión. Intenta de nuevo.";
+    });
+}
+
+function doAdminStep1() {
+  const dni = document.getElementById("dni-input").value.trim();
+  if (!dni) return;
+  const btn = document.getElementById("login-btn");
+  document.getElementById("login-error").textContent = "";
+  setBtnLoading(btn, "Verificando...");
+
+  gasCall({ action: 'checkAdminDni', dni })
+    .then(res => {
+      clearBtnLoading(btn);
+      if (!res.ok) {
+        document.getElementById("login-error").textContent = "DNI de administrador no reconocido.";
+        return;
+      }
+      adminDni = dni;
+      adminLoginStep = 2;
+      document.getElementById("pw-field").style.display = "block";
+      document.getElementById("login-btn").textContent = "Ingresar";
+      document.getElementById("login-btn").onclick = doAdminLogin;
+      document.getElementById("pw-input").focus();
+    })
+    .catch(err => {
+      clearBtnLoading(btn);
+      document.getElementById("login-error").textContent = "Error de conexión. Intenta de nuevo.";
+    });
+}
+
+function doAdminLogin() {
+  const pw = document.getElementById("pw-input").value;
+  const btn = document.getElementById("login-btn");
+  document.getElementById("login-error").textContent = "";
+  setBtnLoading(btn, "Ingresando...");
+  showLoading("Cargando datos del panel...");
+
+  gasCall({ action: 'loginAdmin', dni: adminDni, pw })
+    .then(res => {
+      clearBtnLoading(btn);
+      hideLoading();
+      if (!res.ok) {
+        document.getElementById("login-error").textContent = "Contraseña incorrecta.";
+        return;
+      }
+      currentUser = res.admin; isAdmin = true;
+      ALUMNOS = res.alumnos; EXAMENES = res.examenes; REGISTROS = res.registros; ASISTENCIA = res.asistencia;
+      document.getElementById("header-user").style.display = "flex";
+      document.getElementById("header-name").textContent = "Administrador";
+      document.getElementById("admin-name").textContent = currentUser.nombre;
+      renderAllAdmin();
+      showPage("page-admin");
+    })
+    .catch(err => {
+      clearBtnLoading(btn);
+      hideLoading();
+      document.getElementById("login-error").textContent = "Error de conexión. Intenta de nuevo.";
+    });
+}
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+function getRegistros(dni) { return REGISTROS.filter(r => r.dni === dni); }
+
+function getPromedio(dni) {
+  const notas = REGISTROS.filter(r => r.dni === dni && r.nota !== null).map(r => r.nota);
+  return notas.length ? (notas.reduce((a,b)=>a+b,0) / notas.length) : null;
+}
+
+function avgPill(val) {
+  if (val === null) return '<span class="avg-pill none">Sin notas</span>';
+  const n = parseFloat(val);
+  const cls = n >= 14 ? "good" : n >= 11 ? "mid" : "bad";
+  return `<span class="avg-pill ${cls}">${n.toFixed(1)}</span>`;
+}
+
+function statusBadge(estado) {
+  const map = { aprobado:"done", desaprobado:"missing", revision:"review", pendiente:"missing" };
+  const label = { aprobado:"Aprobado", desaprobado:"Desaprobado", revision:"En revisión", pendiente:"Pendiente" };
+  return `<span class="badge ${map[estado]||'missing'}">${label[estado]||estado}</span>`;
+}
+
+/* ══════════════════════════════════════════════
+   DASHBOARD ALUMNO
+══════════════════════════════════════════════ */
+function renderDashboard() {
+  const a = currentUser;
+  const partes = a.nombre.trim().split(/\s+/);
+  document.getElementById("dash-name").textContent = "Hola, " + partes[0];
+  document.getElementById("dash-dni").textContent = "DNI: " + a.dni;
+  const initials = (partes[0][0]||"") + ((partes[1]||"")[0]||"");
+  document.getElementById("dash-avatar").textContent = initials.toUpperCase();
+
+  const regs = getRegistros(a.dni);
+  const hechos = regs.filter(r => r.estado==="aprobado"||r.estado==="desaprobado");
+  const revision = regs.filter(r => r.estado==="revision");
+  const hechoIds = regs.filter(r => r.estado !== "pendiente").map(r => r.exam_id);
+  const faltantes = EXAMENES.filter(e => !hechoIds.includes(e.id));
+  const notas = hechos.filter(r=>r.nota!==null).map(r=>r.nota);
+  const prom = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : "—";
+
+  document.getElementById("stats-grid").innerHTML = `
+    <div class="stat-card clay"><div class="slabel">Exámenes dados</div><div class="svalue">${hechos.length}/${EXAMENES.length}</div></div>
+    <div class="stat-card red"><div class="slabel">Pendientes</div><div class="svalue">${faltantes.length}</div></div>
+    <div class="stat-card amber"><div class="slabel">En revisión</div><div class="svalue">${revision.length}</div></div>
+    <div class="stat-card green"><div class="slabel">Promedio general</div><div class="svalue">${prom}</div></div>`;
+
+  // completados
+  const doneEl = document.getElementById("list-done");
+  doneEl.innerHTML = hechos.length === 0
+    ? `<div class="exam-row"><span style="color:var(--text-muted);font-size:13px;">Aún no completaste ningún examen.</span></div>`
+    : hechos.map(r => {
+        const ex = EXAMENES.find(e=>e.id===r.exam_id);
+        const ok = r.estado==="aprobado";
+        const nb = r.nota!==null ? (ok?`<span class="badge nota">${r.nota}/20</span>`:`<span class="badge fail">${r.nota}/20</span>`) : "";
+        return `<div class="exam-row">
+          <div class="exam-icon ${ok?'done':'missing'}">${ok?"✓":"✗"}</div>
+          <div class="exam-info"><div class="exam-name">${ex.nombre}</div><div class="exam-sub">${ok?"Aprobado":"Desaprobado"}</div></div>
+          ${nb}
+        </div>`;
+      }).join("");
+
+  // pendientes
+  const missingEl = document.getElementById("list-missing");
+  missingEl.innerHTML = faltantes.length === 0
+    ? `<div class="exam-row"><span style="color:var(--text-muted);font-size:13px;">¡Completaste todos los exámenes!</span></div>`
+    : faltantes.map(ex => `
+        <div class="exam-row clickable" onclick="openModal(${ex.id})">
+          <div class="exam-icon missing">!</div>
+          <div class="exam-info"><div class="exam-name">${ex.nombre}</div><div class="exam-sub">Toca para ver detalles y dar el examen</div></div>
+          <span class="badge missing">Pendiente</span>
+        </div>`).join("");
+
+  // revisión
+  const secRev = document.getElementById("section-review");
+  if (revision.length > 0) {
+    secRev.style.display = "block";
+    document.getElementById("list-review").innerHTML = revision.map(r => {
+      const ex = EXAMENES.find(e=>e.id===r.exam_id);
+      const nb = r.nota !== null ? `<span class="badge nota">${r.nota}/20</span>` : "";
+      return `<div class="exam-row clickable" onclick="openModal(${ex.id})">
+        <div class="exam-icon review">…</div>
+        <div class="exam-info"><div class="exam-name">${ex.nombre}</div><div class="exam-sub">Nota en revisión</div></div>
+        ${nb}
+        <span class="badge review">En revisión</span>
+      </div>`;
+    }).join("");
+  } else { secRev.style.display = "none"; }
+  renderDashAsistencia();
+}
+
+/* ══════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════ */
+function openModal(examId) {
+  currentExamId = examId;
+  const ex = EXAMENES.find(e=>e.id===examId);
+  const reg = REGISTROS.find(r=>r.dni===currentUser.dni&&r.exam_id===examId);
+  document.getElementById("modal-title").textContent = ex.nombre;
+  document.getElementById("modal-summary").textContent = ex.resumen || "Sin resumen de clase.";
+  document.getElementById("modal-link").textContent = ex.enlace;
+  document.getElementById("modal-link").href = ex.enlace;
+  const btn = document.getElementById("modal-btn");
+  const notice = document.getElementById("modal-review-notice");
+  if (reg && reg.estado==="revision") {
+    const notaTexto = reg.nota !== null ? ` — Nota: ${reg.nota}/20` : "";
+    btn.textContent = "Ya enviaste este examen"; btn.className = "btn-take-exam disabled"; btn.onclick = null;
+    notice.style.display = "block";
+    notice.textContent = "Tu examen está siendo revisado." + notaTexto;
+  } else {
+    btn.textContent = "Ir al examen →"; btn.className = "btn-take-exam";
+    btn.onclick = takeExam; notice.style.display = "none";
+  }
+  document.getElementById("exam-modal").classList.add("open");
+}
+
+function takeExam() {
+  const ex = EXAMENES.find(e=>e.id===currentExamId);
+  const examId = currentExamId;
+  const btn = document.getElementById("modal-btn");
+
+  // Abrir la ventana síncronamente dentro del gesto del usuario
+  // (si se abre dentro del callback async el navegador lo bloquea como popup)
+  window.open(ex.enlace, "_blank");
+  closeModal();
+  setBtnLoading(btn, "Registrando...");
+
+  gasCall({ action: 'takeExamen', dni: currentUser.dni, examId })
+    .then(res => {
+      clearBtnLoading(btn);
+      REGISTROS = res.registros;
+      renderDashboard();
+    })
+    .catch(err => {
+      clearBtnLoading(btn);
+    });
+}
+
+function closeModal() { document.getElementById("exam-modal").classList.remove("open"); }
+
+/* ══════════════════════════════════════════════
+   ADMIN — TAB SWITCHER
+══════════════════════════════════════════════ */
+function switchTab(id, btn) {
+  document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+}
+
+function renderAllAdmin() {
+  renderAdminStats();
+  renderAlumnos("");
+  populateExamenSelect();
+  renderNotasExamen();
+  renderPending("");
+  renderConfirmar();
+  initAsistencia();
+}
+
+/* ── ESTADÍSTICAS ── */
+function renderAdminStats() {
+  const total = ALUMNOS.length;
+  const totalExams = EXAMENES.length;
+  let dados = 0, revision = 0, pendientes = 0, aprobados = 0, desaprobados = 0;
+  let allNotas = [];
+
+  ALUMNOS.forEach(a => {
+    const regs = getRegistros(a.dni);
+    const hechos = regs.filter(r=>r.estado==="aprobado"||r.estado==="desaprobado");
+    const rev = regs.filter(r=>r.estado==="revision");
+    const activeIds = regs.filter(r=>r.estado!=="pendiente").map(r=>r.exam_id);
+    const pend = EXAMENES.length - activeIds.length;
+    dados += hechos.length;
+    revision += rev.length;
+    pendientes += (pend < 0 ? 0 : pend);
+    aprobados += regs.filter(r=>r.estado==="aprobado").length;
+    desaprobados += regs.filter(r=>r.estado==="desaprobado").length;
+    regs.filter(r=>r.nota!==null&&!isNaN(r.nota)).forEach(r=>allNotas.push(r.nota));
+  });
+
+  const promGen = allNotas.length ? (allNotas.reduce((a,b)=>a+b,0)/allNotas.length).toFixed(1) : "—";
+  const maxNota = allNotas.length ? Math.max(...allNotas) : "—";
+  const minNota = allNotas.length ? Math.min(...allNotas) : "—";
+
+  document.getElementById("admin-stats-cards").innerHTML = `
+    <div class="astat"><div class="alabel">Total alumnos</div><div class="avalue">${total}</div><div class="asub">${totalExams} exámenes en total</div></div>
+    <div class="astat"><div class="alabel">Exámenes dados</div><div class="avalue">${dados}</div><div class="asub">de ${total * totalExams} posibles</div></div>
+    <div class="astat"><div class="alabel">En revisión</div><div class="avalue" style="color:var(--amber-text)">${revision}</div><div class="asub">por confirmar</div></div>
+    <div class="astat"><div class="alabel">Pendientes</div><div class="avalue" style="color:var(--red-text)">${pendientes}</div><div class="asub">sin rendir</div></div>
+    <div class="astat"><div class="alabel">Aprobados</div><div class="avalue" style="color:var(--green-text)">${aprobados}</div><div class="asub"></div></div>
+    <div class="astat"><div class="alabel">Desaprobados</div><div class="avalue" style="color:var(--red-text)">${desaprobados}</div><div class="asub"></div></div>
+    <div class="astat"><div class="alabel">Promedio general</div><div class="avalue">${promGen}</div><div class="asub">nota promedio</div></div>
+    <div class="astat"><div class="alabel">Nota más alta</div><div class="avalue" style="color:var(--green-text)">${maxNota}</div><div class="asub">Nota más baja: ${minNota}</div></div>
+  `;
+
+  // tabla de avance por examen
+  const rowsHtml = EXAMENES.map(ex => {
+    const regsEx = REGISTROS.filter(r=>r.exam_id===ex.id);
+    const apr = regsEx.filter(r=>r.estado==="aprobado").length;
+    const des = regsEx.filter(r=>r.estado==="desaprobado").length;
+    const rev = regsEx.filter(r=>r.estado==="revision").length;
+    const pct = Math.round((regsEx.length/total)*100);
+    const notas = regsEx.filter(r=>r.nota!==null&&!isNaN(r.nota)).map(r=>r.nota);
+    const prom = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : "—";
+    return `<tr>
+      <td style="font-weight:500;">${ex.nombre}</td>
+      <td>${regsEx.length}/${total} <span style="color:var(--text-muted);font-size:11px;">(${pct}%)</span></td>
+      <td><span style="color:var(--green-text);">${apr}</span> / <span style="color:var(--red-text);">${des}</span> / <span style="color:var(--amber-text);">${rev}</span></td>
+      <td>${prom}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("stats-bottom-grid").innerHTML = `
+    <div style="grid-column:1/-1;">
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Examen</th><th>Participación</th><th>Apr / Des / Rev</th><th>Promedio</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+/* ── ALUMNOS ── */
+let alumnosSearch = "";
+function filterAlumnos(v) { alumnosSearch = v; renderAlumnos(v); }
+
+function renderAlumnos(q) {
+  let lista = ALUMNOS;
+  if (q) lista = lista.filter(a=>a.nombre.toLowerCase().includes(q.toLowerCase())||a.dni.includes(q));
+  const tbody = document.getElementById("tbody-alumnos");
+  const empty = document.getElementById("empty-alumnos");
+  if (!lista.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display = "none";
+  tbody.innerHTML = lista.map((a,i) => {
+    const regs = getRegistros(a.dni);
+    const hechos = regs.filter(r=>r.estado==="aprobado"||r.estado==="desaprobado").length;
+    const rev = regs.filter(r=>r.estado==="revision").length;
+    const pend = Math.max(0, EXAMENES.length - regs.filter(r=>r.estado!=="pendiente").length);
+    const prom = getPromedio(a.dni);
+    return `<tr>
+      <td style="color:var(--text-muted);">${i+1}</td>
+      <td style="font-weight:500;" class="wrap">${a.nombre}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.dni}</td>
+      <td>${hechos} / ${EXAMENES.length}</td>
+      <td style="color:var(--red-text);">${pend}</td>
+      <td style="color:var(--amber-text);">${rev}</td>
+      <td>${avgPill(prom)}</td>
+    </tr>`;
+  }).join("");
+}
+
+/* ── NOTAS POR EXAMEN ── */
+function populateExamenSelect() {
+  const sel = document.getElementById("select-examen");
+  sel.innerHTML = EXAMENES.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join("");
+}
+
+function renderNotasExamen() {
+  const examId = parseInt(document.getElementById("select-examen").value);
+  const tbody = document.getElementById("tbody-notas");
+  const rows = ALUMNOS.map(a => {
+    const reg = REGISTROS.find(r=>r.dni===a.dni&&r.exam_id===examId);
+    const estado = reg ? reg.estado : "pendiente";
+    const nota = reg && reg.nota!==null ? reg.nota+"/20" : "—";
+    return `<tr>
+      <td style="font-weight:500;" class="wrap">${a.nombre}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.dni}</td>
+      <td>${statusBadge(estado)}</td>
+      <td style="font-weight:500;">${nota}</td>
+    </tr>`;
+  }).join("");
+  tbody.innerHTML = rows;
+
+  // resumen del examen
+  const regsEx = REGISTROS.filter(r=>r.exam_id===examId&&r.nota!==null&&!isNaN(r.nota));
+  const notas = regsEx.map(r=>r.nota);
+  const prom = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : null;
+  document.getElementById("notas-summary").innerHTML = notas.length ? `
+    <div class="astat" style="flex:1;min-width:120px;"><div class="alabel">Promedio</div><div class="avalue">${prom}</div></div>
+    <div class="astat" style="flex:1;min-width:120px;"><div class="alabel">Nota más alta</div><div class="avalue" style="color:var(--green-text)">${Math.max(...notas)}</div></div>
+    <div class="astat" style="flex:1;min-width:120px;"><div class="alabel">Nota más baja</div><div class="avalue" style="color:var(--red-text)">${Math.min(...notas)}</div></div>
+    <div class="astat" style="flex:1;min-width:120px;"><div class="alabel">Calificados</div><div class="avalue">${notas.length}/${ALUMNOS.length}</div></div>
+  ` : "";
+}
+
+/* ── PENDIENTES (copiar mensaje) ── */
+let pendingSearch = "";
+function filterPending(v) { pendingSearch = v; renderPending(v); }
+
+function renderPending(q) {
+  let alumnos = ALUMNOS;
+  if (q) alumnos = alumnos.filter(a=>a.nombre.toLowerCase().includes(q.toLowerCase())||a.dni.includes(q));
+
+  let html = "";
+  let alguno = false;
+  alumnos.forEach(a => {
+    const hechoIds = REGISTROS.filter(r=>r.dni===a.dni&&r.estado!=="pendiente").map(r=>r.exam_id);
+    const faltantes = EXAMENES.filter(e=>!hechoIds.includes(e.id));
+    if (!faltantes.length) return;
+    alguno = true;
+    const rows = faltantes.map((ex,i) => `
+      <div class="pending-exam-row">
+        <span class="pending-exam-name">${ex.nombre}</span>
+        <a class="pending-link" href="${ex.enlace}" target="_blank">${ex.enlace}</a>
+        <button class="copy-btn" onclick="copyMsg('${a.nombre}','${ex.nombre}','${ex.enlace}',this)">Copiar mensaje</button>
+        <span class="copy-toast" id="toast-${a.dni}-${ex.id}">¡Copiado!</span>
+      </div>`).join("");
+    html += `<div class="pending-student">
+      <div class="pending-student-header">
+        <span class="pending-student-name">${a.nombre}</span>
+        <span class="pending-student-dni">${a.dni} · ${faltantes.length} pendiente${faltantes.length>1?"s":""}</span>
+      </div>
+      ${rows}
+    </div>`;
+  });
+
+  document.getElementById("pending-list").innerHTML = html;
+  document.getElementById("empty-pending").style.display = alguno ? "none" : "block";
+}
+
+function copyMsg(nombre, examen, enlace, btn) {
+  const msg = `Hola ${nombre}, te falta dar el examen de ${examen}, entra aquí: ${enlace}`;
+  navigator.clipboard.writeText(msg).then(() => {
+    btn.textContent = "¡Copiado!";
+    setTimeout(() => btn.textContent = "Copiar mensaje", 2000);
+  }).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = msg; document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+    document.body.removeChild(ta);
+    btn.textContent = "¡Copiado!";
+    setTimeout(() => btn.textContent = "Copiar mensaje", 2000);
+  });
+}
+
+/* ── CONFIRMAR EXÁMENES ── */
+function filterConfirmar(val, btn) {
+  confirmarFilter = val;
+  document.querySelectorAll("#tab-confirmar .filter-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  renderConfirmar();
+}
+function searchConfirmar(v) { confirmarSearch = v; renderConfirmar(); }
+
+function renderConfirmar() {
+  let rows = [];
+  ALUMNOS.forEach(a => {
+    EXAMENES.forEach(ex => {
+      const reg = REGISTROS.find(r=>r.dni===a.dni&&r.exam_id===ex.id);
+      rows.push({ nombre:a.nombre, dni:a.dni, examen:ex.nombre, exam_id:ex.id,
+        estado: reg?reg.estado:"pendiente", nota: reg?reg.nota:null });
+    });
+  });
+
+  if (confirmarFilter !== "all") rows = rows.filter(r=>r.estado===confirmarFilter);
+  if (confirmarSearch) {
+    const q = confirmarSearch.toLowerCase();
+    rows = rows.filter(r=>r.nombre.toLowerCase().includes(q)||r.dni.includes(q));
+  }
+
+  const tbody = document.getElementById("tbody-confirmar");
+  const empty = document.getElementById("empty-confirmar");
+  if (!rows.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display = "none";
+
+  tbody.innerHTML = rows.map(r => {
+    const canAct = r.estado==="revision";
+    const notaInput = (r.estado==="revision"||r.estado==="aprobado"||r.estado==="desaprobado")
+      ? `<input class="nota-input" type="number" min="0" max="20" placeholder="0-20" value="${r.nota??''}" id="ni-${r.dni}-${r.exam_id}" />`
+      : `<span style="color:var(--text-hint)">—</span>`;
+    return `<tr>
+      <td style="font-weight:500;" class="wrap">${r.nombre}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
+      <td style="max-width:180px;" class="wrap">${r.examen}</td>
+      <td>${statusBadge(r.estado)}</td>
+      <td>${notaInput}</td>
+      <td><div class="actions-cell">
+        <button class="action-btn confirm" ${!canAct?"disabled":""} onclick="confirmar('${r.dni}',${r.exam_id},'aprobado',this)">Confirmar</button>
+        <button class="action-btn reject" ${!canAct?"disabled":""} onclick="confirmar('${r.dni}',${r.exam_id},'desaprobado',this)">Desaprobar</button>
+      </div></td>
+    </tr>`;
+  }).join("");
+}
+
+function confirmar(dni, examId, estado, btn) {
+  const ni = document.getElementById(`ni-${dni}-${examId}`);
+  const nota = ni && ni.value !== "" ? parseInt(ni.value) : null;
+  if (ni && ni.value !== "" && (isNaN(nota)||nota<0||nota>20)) { alert("Nota inválida (0–20)."); return; }
+
+  const row = btn.closest("tr");
+  const actionBtns = row.querySelectorAll(".action-btn");
+  actionBtns.forEach(b => b.disabled = true);
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = `<span class="spinner dark"></span>`;
+
+  gasCall({ action: 'confirmarExamen', dni, examId, estado, nota: nota !== null ? nota : '' })
+    .then(res => {
+      REGISTROS = res.registros;
+      renderConfirmar();
+      renderAdminStats();
+      renderAlumnos(alumnosSearch);
+      renderNotasExamen();
+      renderPending(pendingSearch);
+    })
+    .catch(err => {
+      actionBtns.forEach(b => b.disabled = false);
+      btn.innerHTML = originalHtml;
+      alert("No se pudo guardar el cambio. Intenta de nuevo.");
+    });
+}
+
+/* ══════════════════════════════════════════════
+   ASISTENCIA — HELPERS
+══════════════════════════════════════════════ */
+function getAsistAlumno(dni) { return ASISTENCIA.filter(a=>a.dni===dni); }
+
+function asistStats(dni) {
+  const regs = getAsistAlumno(dni);
+  const total = regs.length;
+  const presentes = regs.filter(a=>a.estado==="presente").length;
+  const tardanzas = regs.filter(a=>a.estado==="tardanza").length;
+  const ausentes  = regs.filter(a=>a.estado==="ausente").length;
+  const pct = total ? Math.round(((presentes + tardanzas * 0.5) / total) * 100) : null;
+  return { total, presentes, tardanzas, ausentes, pct };
+}
+
+function asistClass(pct) { return pct === null ? "none" : pct >= 75 ? "good" : pct >= 50 ? "mid" : "bad"; }
+
+function fmtFecha(f) {
+  const [y,m,d] = f.split("-");
+  const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  return `${parseInt(d)} ${meses[parseInt(m)-1]}`;
+}
+
+function estadoLabel(e) { return e==="presente"?"Presente":e==="tardanza"?"Tardanza":"Ausente"; }
+
+/* ── Dashboard alumno: asistencia ── */
+function renderDashAsistencia() {
+  const { total, presentes, tardanzas, ausentes, pct } = asistStats(currentUser.dni);
+  const regs = getAsistAlumno(currentUser.dni).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const cls = asistClass(pct);
+
+  const chips = regs.map(r => {
+    const k = r.estado==="presente"?"p":r.estado==="tardanza"?"t":"a";
+    return `<span class="asist-chip ${k}" title="${r.fecha}">${fmtFecha(r.fecha)} — ${estadoLabel(r.estado)}</span>`;
+  }).join("");
+
+  document.getElementById("dash-asist").innerHTML = total === 0
+    ? `<div class="exam-row"><span style="font-size:13px;color:var(--text-muted);">Sin registros de asistencia aún.</span></div>`
+    : `<div class="exam-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:500;">${total} clase${total!==1?"s":""} registradas</span>
+            <span style="font-size:12px;color:var(--text-muted);">${presentes} pres. · ${tardanzas} tard. · ${ausentes} aus.</span>
+          </div>
+          <div class="asist-bar-wrap">
+            <div class="asist-bar"><div class="asist-bar-fill ${cls}" style="width:${pct??0}%"></div></div>
+            <span class="asist-pct ${cls}">${pct??0}%</span>
+          </div>
+        </div>
+        <div>
+          <div class="asist-legend">
+            <span><i class="dot p"></i>Presente</span>
+            <span><i class="dot t"></i>Tardanza (cuenta 50%)</span>
+            <span><i class="dot a"></i>Ausente</span>
+          </div>
+          <div class="asist-grid">${chips}</div>
+        </div>
+      </div>`;
+}
+
+/* ── Admin: sub-tabs asistencia ── */
+let asistSubTab = "tomar";
+function switchAsistTab(tab, btn) {
+  asistSubTab = tab;
+  document.querySelectorAll("#tab-asistencia .filter-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("asist-panel-tomar").style.display    = tab==="tomar"    ? "block" : "none";
+  document.getElementById("asist-panel-resumen").style.display  = tab==="resumen"  ? "block" : "none";
+  document.getElementById("asist-panel-historial").style.display= tab==="historial"? "block" : "none";
+  if (tab==="resumen")   renderResumenAsistencia();
+  if (tab==="historial") renderHistorialInit();
+}
+
+/* ── Tomar asistencia ── */
+function renderTomarAsistencia() {
+  const fecha = document.getElementById("asist-fecha").value;
+  if (!fecha) { document.getElementById("asist-tomar-list").innerHTML = ""; return; }
+  document.getElementById("asist-tomar-list").innerHTML = ALUMNOS.map(a => {
+    const reg = ASISTENCIA.find(r=>r.dni===a.dni&&r.fecha===fecha);
+    const val = reg ? reg.estado : "presente";
+    const id = `asist-${a.dni}`;
+    return `<div class="asist-take-row">
+      <div class="asist-name">${a.nombre}</div>
+      <div class="toggle-group">
+        <input type="radio" name="${id}" id="${id}-p" value="presente" ${val==="presente"?"checked":""}>
+        <label for="${id}-p">Presente</label>
+        <input type="radio" name="${id}" id="${id}-t" value="tardanza" ${val==="tardanza"?"checked":""}>
+        <label for="${id}-t">Tardanza</label>
+        <input type="radio" name="${id}" id="${id}-a" value="ausente"  ${val==="ausente" ?"checked":""}>
+        <label for="${id}-a">Ausente</label>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function guardarAsistencia() {
+  const fecha = document.getElementById("asist-fecha").value;
+  if (!fecha) { alert("Selecciona una fecha primero."); return; }
+  const records = [];
+  ALUMNOS.forEach(a => {
+    const sel = document.querySelector(`input[name="asist-${a.dni}"]:checked`);
+    if (sel) records.push({ dni: a.dni, estado: sel.value });
+  });
+
+  const btn = document.querySelector(".save-asist-btn");
+  setBtnLoading(btn, "Guardando...");
+
+  gasCall({ action: 'guardarAsistencia', fecha, records })
+    .then(res => {
+      clearBtnLoading(btn);
+      ASISTENCIA = res.asistencia;
+      const notice = document.getElementById("save-notice");
+      notice.style.display = "inline";
+      setTimeout(() => notice.style.display = "none", 2000);
+    })
+    .catch(err => {
+      clearBtnLoading(btn);
+      alert("No se pudo guardar la asistencia. Intenta de nuevo.");
+    });
+}
+
+/* ── Resumen por alumno ── */
+function renderResumenAsistencia() {
+  const rows = ALUMNOS.map(a => {
+    const { total, presentes, tardanzas, ausentes, pct } = asistStats(a.dni);
+    const cls = asistClass(pct);
+    return `<div class="asist-summary-row">
+      <div class="asist-summary-name">${a.nombre}</div>
+      <div class="asist-counts">${presentes} P · ${tardanzas} T · ${ausentes} A</div>
+      <div class="asist-bar-wrap" style="flex:1;">
+        <div class="asist-bar"><div class="asist-bar-fill ${cls}" style="width:${pct??0}%"></div></div>
+        <span class="asist-pct ${cls}">${pct!==null?pct+"%":"—"}</span>
+      </div>
+    </div>`;
+  }).join("");
+  document.getElementById("asist-resumen-list").innerHTML = rows || `<div class="empty-state">Sin registros</div>`;
+}
+
+/* ── Historial de clases ── */
+function renderHistorialInit() {
+  const fechas = [...new Set(ASISTENCIA.map(a=>a.fecha))].sort((a,b)=>b.localeCompare(a));
+  const sel = document.getElementById("asist-sel-fecha");
+  sel.innerHTML = fechas.length
+    ? fechas.map(f=>`<option value="${f}">${f} — ${fmtFecha(f)}</option>`).join("")
+    : `<option value="">Sin clases registradas</option>`;
+  renderHistorialFecha();
+}
+
+function renderHistorialFecha() {
+  const fecha = document.getElementById("asist-sel-fecha").value;
+  const regs = ASISTENCIA.filter(a=>a.fecha===fecha);
+  const tbody = document.getElementById("tbody-historial");
+  const empty = document.getElementById("empty-historial");
+  if (!regs.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display="none";
+  tbody.innerHTML = ALUMNOS.map(a => {
+    const r = regs.find(x=>x.dni===a.dni);
+    if (!r) return "";
+    const k = r.estado==="presente"?"done":r.estado==="tardanza"?"review":"missing";
+    return `<tr>
+      <td style="font-weight:500;" class="wrap">${a.nombre}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.dni}</td>
+      <td><span class="badge ${k}">${estadoLabel(r.estado)}</span></td>
+    </tr>`;
+  }).filter(Boolean).join("");
+}
+
+/* ── inicializar tab asistencia ── */
+function initAsistencia() {
+  const hoy = new Date().toISOString().split("T")[0];
+  document.getElementById("asist-fecha").value = hoy;
+  renderTomarAsistencia();
+}
+</script>
 </body>
 </html>
