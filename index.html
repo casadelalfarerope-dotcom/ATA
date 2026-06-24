@@ -1420,7 +1420,7 @@ function renderTomarAsistencia(fecha, q) {
   }
   document.getElementById("asist-tomar-list").innerHTML = alumnos.map(a => {
     const reg = ASISTENCIA.find(r=>r.dni===a.dni&&r.fecha===fecha);
-    const val = reg ? reg.estado : "presente";
+    const val = reg ? reg.estado : "ausente";
     const id = `asist-${a.dni}`;
     return `<div class="asist-take-row">
       <div class="asist-name">${a.nombre}</div>
