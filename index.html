@@ -518,6 +518,26 @@
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxDpRfZJDDxpz0mPT2rpHXyDIsAj6l9v02vIDRj1ilZar3PWqM8esUwV0ARlAcPlw_9FQ/exec';
 
 function gasCall(params, timeoutMs = 25000) {
+  const qs = Object.entries(params)
+    .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(
+      typeof v === 'object' ? JSON.stringify(v) : String(v)
+    )).join('&');
+  const url = GAS_URL + '?' + qs;
+
+  // Fetch con credentials:omit para evitar redireccionamientos de autenticación de Google
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { credentials: 'omit', redirect: 'follow', signal: controller.signal })
+    .then(r => { clearTimeout(timer); return r.json(); })
+    .catch(err => {
+      clearTimeout(timer);
+      // Si fetch falla por CORS, intentar con JSONP como fallback
+      if (err.name === 'AbortError') throw new Error('timeout');
+      return gasCallJsonp(params, timeoutMs);
+    });
+}
+
+function gasCallJsonp(params, timeoutMs = 25000) {
   return new Promise((resolve, reject) => {
     const cb = 'gasCb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
     const script = document.createElement('script');
@@ -526,28 +546,11 @@ function gasCall(params, timeoutMs = 25000) {
         typeof v === 'object' ? JSON.stringify(v) : String(v)
       )).join('&');
     script.src = GAS_URL + '?' + qs;
-
     let done = false;
-    const cleanup = () => {
-      done = true;
-      delete window[cb];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    };
-
-    const timer = setTimeout(() => {
-      if (!done) { cleanup(); reject(new Error('timeout')); }
-    }, timeoutMs);
-
-    window[cb] = data => {
-      clearTimeout(timer);
-      cleanup();
-      resolve(data);
-    };
-    script.onerror = () => {
-      clearTimeout(timer);
-      cleanup();
-      reject(new Error('error'));
-    };
+    const cleanup = () => { done = true; delete window[cb]; if (script.parentNode) script.parentNode.removeChild(script); };
+    const timer = setTimeout(() => { if (!done) { cleanup(); reject(new Error('timeout')); } }, timeoutMs);
+    window[cb] = data => { clearTimeout(timer); cleanup(); resolve(data); };
+    script.onerror = () => { clearTimeout(timer); cleanup(); reject(new Error('error')); };
     document.body.appendChild(script);
   });
 }
