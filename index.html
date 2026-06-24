@@ -295,6 +295,9 @@
     .save-asist-btn:hover { background: var(--clay-mid); }
     .save-asist-btn:disabled { opacity: 0.75; cursor: default; }
     .save-notice { font-size: 13px; color: var(--green-text); margin-left: 10px; display: none; }
+    .unsaved-badge { display: none; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--amber-text); background: var(--amber-bg); border: 0.5px solid var(--amber-border); border-radius: 20px; padding: 4px 10px; }
+    .unsaved-badge.visible { display: flex; }
+    .unsaved-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber-text); flex-shrink: 0; }
 
     /* resumen asistencia admin */
     .asist-summary-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 0.5px solid var(--border); }
@@ -582,6 +585,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
           Eliminar
         </button>
+        <span class="unsaved-badge" id="unsaved-badge"><span class="unsaved-dot"></span>Cambios sin guardar</span>
         <button class="save-asist-btn" onclick="guardarAsistencia()" id="btn-guardar-asist">Guardar asistencia</button>
         <span class="save-notice" id="save-notice">¡Guardado!</span>
       </div>
@@ -680,6 +684,30 @@
     <div class="alumno-modal-stats" id="adm-stats"></div>
     <div class="mlabel" style="margin-bottom:8px;">Exámenes</div>
     <div class="alumno-exam-list" id="adm-exam-list"></div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINACIÓN DE CLASE -->
+<div class="modal-overlay" id="eliminar-clase-modal" onclick="if(event.target===this)cerrarEliminarClaseModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">Eliminar clase</div>
+      <button class="modal-close" onclick="cerrarEliminarClaseModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div style="background:var(--red-bg);border:0.5px solid var(--red-border);border-radius:var(--radius);padding:12px 14px;margin-bottom:1rem;font-size:13px;color:var(--red-text);display:flex;gap:10px;align-items:flex-start;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Se eliminarán también <strong>todos los registros de asistencia</strong> de esta clase. Esta acción no se puede deshacer.</span>
+    </div>
+    <p style="font-size:14px;color:var(--text);margin-bottom:1.25rem;">¿Eliminar la clase <strong id="eliminar-clase-nombre"></strong>?</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="filter-btn" onclick="cerrarEliminarClaseModal()">Cancelar</button>
+      <button id="btn-confirmar-eliminar" onclick="ejecutarEliminarClase()"
+        style="padding:8px 18px;background:var(--red-text);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;">
+        Eliminar clase
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1635,6 +1663,7 @@ function onClaseSelect() {
   info.style.flexWrap = "wrap";
   buscarWrap.style.display = "block";
   document.getElementById("asist-buscar").value = "";
+  actualizarUnsavedBadge(fecha);
   renderTomarAsistencia(fecha);
 }
 
@@ -1682,25 +1711,47 @@ function guardarEdicionClase() {
 
 function confirmarEliminarClase() {
   const fecha = document.getElementById("asist-clase-sel").value;
+  if (!fecha) return;
   const clase = CLASES.find(c => c.fecha === fecha);
   const nombre = clase ? `${fmtFecha(fecha)} — ${clase.tema}` : fmtFecha(fecha);
-  const ok = confirm(`¿Eliminar la clase "${nombre}"?\n\nATENCIÓN: Se borrarán también todos los registros de asistencia de esa clase. Esta acción no se puede deshacer.`);
-  if (!ok) return;
-  const btn = document.getElementById("btn-guardar-asist");
-  setBtnLoading(btn, "Eliminando...");
+  document.getElementById("eliminar-clase-nombre").textContent = `"${nombre}"`;
+  document.getElementById("eliminar-clase-modal")._fecha = fecha;
+  document.getElementById("eliminar-clase-modal").classList.add("open");
+}
+
+function cerrarEliminarClaseModal() {
+  document.getElementById("eliminar-clase-modal").classList.remove("open");
+}
+
+function ejecutarEliminarClase() {
+  const fecha = document.getElementById("eliminar-clase-modal")._fecha;
+  if (!fecha) return;
+  const btnModal = document.getElementById("btn-confirmar-eliminar");
+  const btnGuardar = document.getElementById("btn-guardar-asist");
+  btnModal.disabled = true;
+  btnModal.textContent = "Eliminando...";
   gasCall({ action: 'eliminarClase', fecha })
     .then(res => {
-      clearBtnLoading(btn);
+      btnModal.disabled = false;
+      btnModal.textContent = "Eliminar clase";
+      cerrarEliminarClaseModal();
       if (!res.ok) { alert("Error al eliminar: " + (res.error || "")); return; }
       CLASES = res.clases;
       if (res.asistencia) { ASISTENCIA = res.asistencia; asistenciaLoaded = true; }
+      delete pendingAsist[fecha];
+      actualizarUnsavedBadge(fecha);
       document.getElementById("asist-tomar-list").innerHTML = "";
       document.getElementById("asist-clase-info").style.display = "none";
       document.getElementById("asist-buscar-wrap").style.display = "none";
       document.getElementById("editar-clase-form").style.display = "none";
       poblarSelectorClases();
     })
-    .catch(() => { clearBtnLoading(btn); alert("Error de conexión."); });
+    .catch(() => {
+      btnModal.disabled = false;
+      btnModal.textContent = "Eliminar clase";
+      cerrarEliminarClaseModal();
+      alert("Error de conexión.");
+    });
 }
 
 function toggleNuevaClase() {
@@ -1772,6 +1823,14 @@ function renderTomarAsistencia(fecha, q) {
 function marcarPendiente(fecha, dni, estado) {
   if (!pendingAsist[fecha]) pendingAsist[fecha] = {};
   pendingAsist[fecha][dni] = estado;
+  actualizarUnsavedBadge(fecha);
+}
+
+function actualizarUnsavedBadge(fecha) {
+  const badge = document.getElementById("unsaved-badge");
+  if (!badge) return;
+  const hay = pendingAsist[fecha] && Object.keys(pendingAsist[fecha]).length > 0;
+  badge.classList.toggle("visible", hay);
 }
 
 function guardarAsistencia() {
@@ -1796,6 +1855,7 @@ function guardarAsistencia() {
       clearBtnLoading(btn);
       ASISTENCIA = res.asistencia; asistenciaLoaded = true;
       delete pendingAsist[fecha];
+      actualizarUnsavedBadge(fecha);
       const notice = document.getElementById("save-notice");
       notice.style.display = "inline";
       setTimeout(() => notice.style.display = "none", 2500);
