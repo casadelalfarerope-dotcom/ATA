@@ -649,6 +649,7 @@ let EXAMENES = [];
 let REGISTROS = [];
 let ASISTENCIA = [];
 let CLASES = [];
+let pendingAsist = {}; // { fecha: { dni: estado } } — cambios no guardados
 
 let currentUser = null;
 let isAdmin = false;
@@ -1494,6 +1495,7 @@ function renderTomarAsistencia(fecha, q) {
   if (!fecha) fecha = document.getElementById("asist-clase-sel").value;
   if (!fecha) { document.getElementById("asist-tomar-list").innerHTML = ""; return; }
   if (q === undefined) q = (document.getElementById("asist-buscar")||{}).value || "";
+  const pending = pendingAsist[fecha] || {};
   let alumnos = ALUMNOS;
   if (q) {
     const lq = q.toLowerCase();
@@ -1501,29 +1503,42 @@ function renderTomarAsistencia(fecha, q) {
   }
   document.getElementById("asist-tomar-list").innerHTML = alumnos.map(a => {
     const reg = ASISTENCIA.find(r=>r.dni===a.dni&&r.fecha===fecha);
-    const val = reg ? reg.estado : "ausente";
+    // pendingAsist tiene prioridad sobre lo guardado en servidor
+    const val = (a.dni in pending) ? pending[a.dni] : (reg ? reg.estado : "ausente");
     const id = `asist-${a.dni}`;
     return `<div class="asist-take-row">
       <div class="asist-name">${a.nombre}</div>
       <div class="toggle-group">
-        <input type="radio" name="${id}" id="${id}-p" value="presente" ${val==="presente"?"checked":""}>
+        <input type="radio" name="${id}" id="${id}-p" value="presente" ${val==="presente"?"checked":""} onchange="marcarPendiente('${fecha}','${a.dni}',this.value)">
         <label for="${id}-p">Presente</label>
-        <input type="radio" name="${id}" id="${id}-t" value="tardanza" ${val==="tardanza"?"checked":""}>
+        <input type="radio" name="${id}" id="${id}-t" value="tardanza" ${val==="tardanza"?"checked":""} onchange="marcarPendiente('${fecha}','${a.dni}',this.value)">
         <label for="${id}-t">Tardanza</label>
-        <input type="radio" name="${id}" id="${id}-a" value="ausente"  ${val==="ausente" ?"checked":""}>
+        <input type="radio" name="${id}" id="${id}-a" value="ausente"  ${val==="ausente" ?"checked":""} onchange="marcarPendiente('${fecha}','${a.dni}',this.value)">
         <label for="${id}-a">Ausente</label>
       </div>
     </div>`;
   }).join("");
 }
 
+function marcarPendiente(fecha, dni, estado) {
+  if (!pendingAsist[fecha]) pendingAsist[fecha] = {};
+  pendingAsist[fecha][dni] = estado;
+}
+
 function guardarAsistencia() {
   const fecha = document.getElementById("asist-clase-sel").value;
   if (!fecha) { alert("Selecciona una clase primero."); return; }
-  const records = [];
-  ALUMNOS.forEach(a => {
-    const sel = document.querySelector(`input[name="asist-${a.dni}"]:checked`);
-    if (sel) records.push({ dni: a.dni, estado: sel.value });
+  const pending = pendingAsist[fecha] || {};
+  // Construir registros para TODOS los alumnos: pending > servidor > ausente
+  const records = ALUMNOS.map(a => {
+    let estado;
+    if (a.dni in pending) {
+      estado = pending[a.dni];
+    } else {
+      const reg = ASISTENCIA.find(r => r.dni === a.dni && r.fecha === fecha);
+      estado = reg ? reg.estado : "ausente";
+    }
+    return { dni: a.dni, estado };
   });
   const btn = document.getElementById("btn-guardar-asist");
   setBtnLoading(btn, "Guardando...");
@@ -1531,6 +1546,7 @@ function guardarAsistencia() {
     .then(res => {
       clearBtnLoading(btn);
       ASISTENCIA = res.asistencia;
+      delete pendingAsist[fecha]; // limpiar pendientes ya guardados
       const notice = document.getElementById("save-notice");
       notice.style.display = "inline";
       setTimeout(() => notice.style.display = "none", 2500);
