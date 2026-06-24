@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Portal de Exámenes — Academia Taller del Alfarero</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -420,12 +423,37 @@
 
     <!-- Tomar asistencia -->
     <div id="asist-panel-tomar">
-      <div class="search-row" style="align-items:center;">
-        <label style="font-size:13px;color:var(--text-muted);flex-shrink:0;">Fecha de clase:</label>
-        <input type="date" id="asist-fecha" style="padding:7px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;" onchange="renderTomarAsistencia()" />
-        <button class="save-asist-btn" onclick="guardarAsistencia()">Guardar asistencia</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:0.75rem;">
+        <select id="asist-clase-sel" onchange="onClaseSelect()" style="flex:1;min-width:200px;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;">
+          <option value="">— Selecciona una clase —</option>
+        </select>
+        <button class="filter-btn" onclick="toggleNuevaClase()" id="btn-nueva-clase">+ Nueva clase</button>
+      </div>
+
+      <!-- Formulario nueva clase -->
+      <div id="nueva-clase-form" style="display:none;background:var(--surface);border:0.5px solid var(--border-md);border-radius:var(--radius-lg);padding:1rem;margin-bottom:0.75rem;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:0.6rem;color:var(--text);">Nueva clase</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Fecha</div>
+            <input type="date" id="nc-fecha" style="padding:7px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;" />
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Tema de la clase</div>
+            <input type="text" id="nc-tema" placeholder="Ej: Introducción al barro" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;" />
+          </div>
+          <button class="save-asist-btn" onclick="crearClase()" id="btn-crear-clase">Crear clase</button>
+        </div>
+        <div id="nc-error" style="font-size:12px;color:var(--red-text);margin-top:6px;display:none;"></div>
+      </div>
+
+      <!-- Barra acciones de la clase seleccionada -->
+      <div id="asist-clase-info" style="display:none;margin-bottom:0.75rem;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span id="asist-clase-label" style="font-size:13px;color:var(--text-muted);flex:1;"></span>
+        <button class="save-asist-btn" onclick="guardarAsistencia()" id="btn-guardar-asist">Guardar asistencia</button>
         <span class="save-notice" id="save-notice">¡Guardado!</span>
       </div>
+
       <div id="asist-tomar-list"></div>
     </div>
 
@@ -439,7 +467,7 @@
     <!-- Historial de clases -->
     <div id="asist-panel-historial" style="display:none;">
       <div class="search-row">
-        <select id="asist-sel-fecha" onchange="renderHistorialFecha()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;"></select>
+        <select id="asist-sel-fecha" onchange="renderHistorialFecha()" style="flex:1;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;"></select>
       </div>
       <div class="table-wrap">
         <table class="admin-table">
@@ -486,7 +514,7 @@
    se llena tras login vía google.script.run
 ══════════════════════════════════════════════ */
 // URL del web app de Google Apps Script (reemplaza si cambia el deployment)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxS715WZQkYTkPmWXCkJBzD7Z9BhNaYOe2zZNQnSwwXthbs6n7_bZSBAeiLxwD96krcjA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxDpRfZJDDxpz0mPT2rpHXyDIsAj6l9v02vIDRj1ilZar3PWqM8esUwV0ARlAcPlw_9FQ/exec';
 
 function gasCall(params) {
   return new Promise((resolve, reject) => {
@@ -515,6 +543,7 @@ let ALUMNOS = [];
 let EXAMENES = [];
 let REGISTROS = [];
 let ASISTENCIA = [];
+let CLASES = [];
 
 let currentUser = null;
 let isAdmin = false;
@@ -671,7 +700,7 @@ function doAdminLogin() {
         return;
       }
       currentUser = res.admin; isAdmin = true;
-      ALUMNOS = res.alumnos; EXAMENES = res.examenes; REGISTROS = res.registros; ASISTENCIA = res.asistencia;
+      ALUMNOS = res.alumnos; EXAMENES = res.examenes; REGISTROS = res.registros; ASISTENCIA = res.asistencia; CLASES = res.clases || [];
       document.getElementById("header-user").style.display = "flex";
       document.getElementById("header-name").textContent = "Administrador";
       document.getElementById("admin-name").textContent = currentUser.nombre;
@@ -1171,9 +1200,71 @@ function switchAsistTab(tab, btn) {
   if (tab==="historial") renderHistorialInit();
 }
 
+/* ── Selector de clases ── */
+function poblarSelectorClases(seleccionarFecha) {
+  const sel = document.getElementById("asist-clase-sel");
+  const sorted = [...CLASES].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  sel.innerHTML = `<option value="">— Selecciona una clase —</option>` +
+    sorted.map(c=>`<option value="${c.fecha}">${fmtFecha(c.fecha)} — ${c.tema}</option>`).join("");
+  if (seleccionarFecha) sel.value = seleccionarFecha;
+  onClaseSelect();
+}
+
+function onClaseSelect() {
+  const fecha = document.getElementById("asist-clase-sel").value;
+  const info = document.getElementById("asist-clase-info");
+  if (!fecha) {
+    info.style.display = "none";
+    document.getElementById("asist-tomar-list").innerHTML = "";
+    return;
+  }
+  const clase = CLASES.find(c=>c.fecha===fecha);
+  document.getElementById("asist-clase-label").textContent =
+    clase ? `${fmtFecha(fecha)} — ${clase.tema}` : fmtFecha(fecha);
+  info.style.display = "flex";
+  info.style.flexWrap = "wrap";
+  renderTomarAsistencia(fecha);
+}
+
+function toggleNuevaClase() {
+  const form = document.getElementById("nueva-clase-form");
+  const visible = form.style.display !== "none";
+  form.style.display = visible ? "none" : "block";
+  if (!visible) {
+    const hoy = new Date().toISOString().split("T")[0];
+    document.getElementById("nc-fecha").value = hoy;
+    document.getElementById("nc-tema").value = "";
+    document.getElementById("nc-error").style.display = "none";
+    document.getElementById("nc-tema").focus();
+  }
+}
+
+function crearClase() {
+  const fecha = document.getElementById("nc-fecha").value;
+  const tema  = document.getElementById("nc-tema").value.trim();
+  const errEl = document.getElementById("nc-error");
+  if (!fecha) { errEl.textContent="Selecciona una fecha."; errEl.style.display="block"; return; }
+  if (!tema)  { errEl.textContent="Ingresa el tema de la clase."; errEl.style.display="block"; return; }
+  errEl.style.display="none";
+  const btn = document.getElementById("btn-crear-clase");
+  setBtnLoading(btn, "Creando...");
+  gasCall({ action:'crearClase', fecha, tema })
+    .then(res => {
+      clearBtnLoading(btn);
+      if (!res.ok) { errEl.textContent=res.error||"Error al crear."; errEl.style.display="block"; return; }
+      CLASES = res.clases;
+      document.getElementById("nueva-clase-form").style.display = "none";
+      poblarSelectorClases(fecha);
+    })
+    .catch(() => {
+      clearBtnLoading(btn);
+      errEl.textContent="Error de conexión."; errEl.style.display="block";
+    });
+}
+
 /* ── Tomar asistencia ── */
-function renderTomarAsistencia() {
-  const fecha = document.getElementById("asist-fecha").value;
+function renderTomarAsistencia(fecha) {
+  if (!fecha) fecha = document.getElementById("asist-clase-sel").value;
   if (!fecha) { document.getElementById("asist-tomar-list").innerHTML = ""; return; }
   document.getElementById("asist-tomar-list").innerHTML = ALUMNOS.map(a => {
     const reg = ASISTENCIA.find(r=>r.dni===a.dni&&r.fecha===fecha);
@@ -1194,26 +1285,24 @@ function renderTomarAsistencia() {
 }
 
 function guardarAsistencia() {
-  const fecha = document.getElementById("asist-fecha").value;
-  if (!fecha) { alert("Selecciona una fecha primero."); return; }
+  const fecha = document.getElementById("asist-clase-sel").value;
+  if (!fecha) { alert("Selecciona una clase primero."); return; }
   const records = [];
   ALUMNOS.forEach(a => {
     const sel = document.querySelector(`input[name="asist-${a.dni}"]:checked`);
     if (sel) records.push({ dni: a.dni, estado: sel.value });
   });
-
-  const btn = document.querySelector(".save-asist-btn");
+  const btn = document.getElementById("btn-guardar-asist");
   setBtnLoading(btn, "Guardando...");
-
   gasCall({ action: 'guardarAsistencia', fecha, records })
     .then(res => {
       clearBtnLoading(btn);
       ASISTENCIA = res.asistencia;
       const notice = document.getElementById("save-notice");
       notice.style.display = "inline";
-      setTimeout(() => notice.style.display = "none", 2000);
+      setTimeout(() => notice.style.display = "none", 2500);
     })
-    .catch(err => {
+    .catch(() => {
       clearBtnLoading(btn);
       alert("No se pudo guardar la asistencia. Intenta de nuevo.");
     });
@@ -1238,11 +1327,17 @@ function renderResumenAsistencia() {
 
 /* ── Historial de clases ── */
 function renderHistorialInit() {
-  const fechas = [...new Set(ASISTENCIA.map(a=>a.fecha))].sort((a,b)=>b.localeCompare(a));
   const sel = document.getElementById("asist-sel-fecha");
-  sel.innerHTML = fechas.length
-    ? fechas.map(f=>`<option value="${f}">${f} — ${fmtFecha(f)}</option>`).join("")
-    : `<option value="">Sin clases registradas</option>`;
+  // Usa CLASES si hay, sino extrae fechas únicas de ASISTENCIA
+  const clasesOrd = [...CLASES].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  if (clasesOrd.length) {
+    sel.innerHTML = clasesOrd.map(c=>`<option value="${c.fecha}">${fmtFecha(c.fecha)} — ${c.tema}</option>`).join("");
+  } else {
+    const fechas = [...new Set(ASISTENCIA.map(a=>a.fecha))].sort((a,b)=>b.localeCompare(a));
+    sel.innerHTML = fechas.length
+      ? fechas.map(f=>`<option value="${f}">${fmtFecha(f)}</option>`).join("")
+      : `<option value="">Sin clases registradas</option>`;
+  }
   renderHistorialFecha();
 }
 
@@ -1267,9 +1362,7 @@ function renderHistorialFecha() {
 
 /* ── inicializar tab asistencia ── */
 function initAsistencia() {
-  const hoy = new Date().toISOString().split("T")[0];
-  document.getElementById("asist-fecha").value = hoy;
-  renderTomarAsistencia();
+  poblarSelectorClases();
 }
 </script>
 </body>
