@@ -517,7 +517,7 @@
 // URL del web app de Google Apps Script (reemplaza si cambia el deployment)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxDpRfZJDDxpz0mPT2rpHXyDIsAj6l9v02vIDRj1ilZar3PWqM8esUwV0ARlAcPlw_9FQ/exec';
 
-function gasCall(params) {
+function gasCall(params, timeoutMs = 25000) {
   return new Promise((resolve, reject) => {
     const cb = 'gasCb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
     const script = document.createElement('script');
@@ -526,15 +526,27 @@ function gasCall(params) {
         typeof v === 'object' ? JSON.stringify(v) : String(v)
       )).join('&');
     script.src = GAS_URL + '?' + qs;
-    window[cb] = data => {
+
+    let done = false;
+    const cleanup = () => {
+      done = true;
       delete window[cb];
-      document.body.removeChild(script);
+      if (script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    const timer = setTimeout(() => {
+      if (!done) { cleanup(); reject(new Error('timeout')); }
+    }, timeoutMs);
+
+    window[cb] = data => {
+      clearTimeout(timer);
+      cleanup();
       resolve(data);
     };
     script.onerror = () => {
-      delete window[cb];
-      document.body.removeChild(script);
-      reject(new Error('Error de conexión'));
+      clearTimeout(timer);
+      cleanup();
+      reject(new Error('error'));
     };
     document.body.appendChild(script);
   });
@@ -672,7 +684,7 @@ function doLogin() {
     })
     .catch(err => {
       clearBtnLoading(btn);
-      document.getElementById("login-error").textContent = "Error de conexión. Intenta de nuevo.";
+      document.getElementById("login-error").textContent = "Sin conexión con el servidor. Espera unos segundos e intenta de nuevo.";
     });
 }
 
@@ -699,7 +711,7 @@ function doAdminStep1() {
     })
     .catch(err => {
       clearBtnLoading(btn);
-      document.getElementById("login-error").textContent = "Error de conexión. Intenta de nuevo.";
+      document.getElementById("login-error").textContent = "Sin conexión con el servidor. Espera unos segundos e intenta de nuevo.";
     });
 }
 
@@ -729,7 +741,7 @@ function doAdminLogin() {
     .catch(err => {
       clearBtnLoading(btn);
       hideLoading();
-      document.getElementById("login-error").textContent = "Error de conexión. Intenta de nuevo.";
+      document.getElementById("login-error").textContent = "Sin conexión con el servidor. Espera unos segundos e intenta de nuevo.";
     });
 }
 
