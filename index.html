@@ -164,7 +164,7 @@
     .astat .asub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
     /* Tables */
-    .table-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; }
+    .table-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto; margin-bottom: 1.5rem; -webkit-overflow-scrolling: touch; }
     .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .admin-table th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; border-bottom: 0.5px solid var(--border); background: var(--surface2); white-space: nowrap; }
     .admin-table th.sortable { cursor: pointer; user-select: none; }
@@ -256,10 +256,49 @@
     .asist-summary-name { font-size: 13px; font-weight: 500; width: 200px; flex-shrink: 0; }
     .asist-counts { font-size: 12px; color: var(--text-muted); width: 120px; flex-shrink: 0; }
 
-    @media (max-width: 560px) {
-      #page-dashboard, #page-admin { padding: 1rem; }
-      .login-card { padding: 1.5rem; }
-      .admin-tabs { overflow-x: auto; }
+    @media (max-width: 640px) {
+      #page-dashboard, #page-admin { padding: 0.75rem; }
+      .tab-content.active { padding: 0 0.25rem; }
+      .login-card { padding: 1.25rem 1.25rem; }
+
+      /* Header */
+      .dash-hero { padding: 1.25rem 1.25rem 1rem; }
+      .dash-body { padding: 1rem 1.25rem; }
+
+      /* Admin tabs: scroll horizontal */
+      .admin-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: 2px; }
+      .tab-btn { flex-shrink: 0; }
+
+      /* Stats cards: 2 columnas */
+      .admin-stats { grid-template-columns: repeat(2, 1fr) !important; }
+      .stats-grid  { grid-template-columns: repeat(2, 1fr); }
+
+      /* Tablas: scroll horizontal */
+      .admin-table { min-width: 540px; }
+      .admin-table td, .admin-table th { padding: 8px 10px; }
+
+      /* Toggle de asistencia: más compacto */
+      .toggle-group label { padding: 5px 9px; font-size: 11px; }
+      .asist-take-row { padding: 0.6rem 0.75rem; gap: 8px; }
+      .asist-name { font-size: 13px; min-width: 120px; }
+
+      /* Resumen asistencia */
+      .asist-summary-name { width: auto; flex: 1; min-width: 100px; }
+      .asist-counts { width: auto; min-width: 80px; }
+      .asist-summary-row { flex-wrap: wrap; }
+
+      /* Botones acción confirmar */
+      .action-btn { font-size: 10px; padding: 4px 7px; min-width: 58px; }
+      .nota-input { width: 48px; }
+
+      /* Pendientes */
+      .pending-student { margin-bottom: 10px; }
+      .pending-exam-row { flex-wrap: wrap; gap: 6px; }
+      .pending-link { font-size: 11px; word-break: break-all; flex: 1 1 100%; }
+
+      /* Filtros wrap */
+      .search-row { flex-wrap: wrap; gap: 6px; }
+      .search-input { width: 100%; }
     }
   </style>
 </head>
@@ -470,9 +509,14 @@
 
       <!-- Barra acciones de la clase seleccionada -->
       <div id="asist-clase-info" style="display:none;margin-bottom:0.75rem;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span id="asist-clase-label" style="font-size:13px;color:var(--text-muted);flex:1;"></span>
+        <span id="asist-clase-label" style="font-size:13px;color:var(--text-muted);flex:1;min-width:120px;"></span>
         <button class="save-asist-btn" onclick="guardarAsistencia()" id="btn-guardar-asist">Guardar asistencia</button>
         <span class="save-notice" id="save-notice">¡Guardado!</span>
+      </div>
+
+      <!-- Buscador de alumno -->
+      <div id="asist-buscar-wrap" style="display:none;margin-bottom:0.75rem;">
+        <input class="search-input" type="text" id="asist-buscar" placeholder="Buscar alumno..." oninput="filtrarAsistencia(this.value)" style="width:100%;max-width:320px;" />
       </div>
 
       <div id="asist-tomar-list"></div>
@@ -1307,8 +1351,10 @@ function poblarSelectorClases(seleccionarFecha) {
 function onClaseSelect() {
   const fecha = document.getElementById("asist-clase-sel").value;
   const info = document.getElementById("asist-clase-info");
+  const buscarWrap = document.getElementById("asist-buscar-wrap");
   if (!fecha) {
     info.style.display = "none";
+    buscarWrap.style.display = "none";
     document.getElementById("asist-tomar-list").innerHTML = "";
     return;
   }
@@ -1317,7 +1363,13 @@ function onClaseSelect() {
     clase ? `${fmtFecha(fecha)} — ${clase.tema}` : fmtFecha(fecha);
   info.style.display = "flex";
   info.style.flexWrap = "wrap";
+  buscarWrap.style.display = "block";
+  document.getElementById("asist-buscar").value = "";
   renderTomarAsistencia(fecha);
+}
+
+function filtrarAsistencia(q) {
+  renderTomarAsistencia(document.getElementById("asist-clase-sel").value, q);
 }
 
 function toggleNuevaClase() {
@@ -1357,10 +1409,16 @@ function crearClase() {
 }
 
 /* ── Tomar asistencia ── */
-function renderTomarAsistencia(fecha) {
+function renderTomarAsistencia(fecha, q) {
   if (!fecha) fecha = document.getElementById("asist-clase-sel").value;
   if (!fecha) { document.getElementById("asist-tomar-list").innerHTML = ""; return; }
-  document.getElementById("asist-tomar-list").innerHTML = ALUMNOS.map(a => {
+  if (q === undefined) q = (document.getElementById("asist-buscar")||{}).value || "";
+  let alumnos = ALUMNOS;
+  if (q) {
+    const lq = q.toLowerCase();
+    alumnos = alumnos.filter(a => a.nombre.toLowerCase().includes(lq) || a.dni.includes(lq));
+  }
+  document.getElementById("asist-tomar-list").innerHTML = alumnos.map(a => {
     const reg = ASISTENCIA.find(r=>r.dni===a.dni&&r.fecha===fecha);
     const val = reg ? reg.estado : "presente";
     const id = `asist-${a.dni}`;
