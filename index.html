@@ -166,7 +166,11 @@
     /* Tables */
     .table-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; }
     .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .admin-table th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; border-bottom: 0.5px solid var(--border); background: var(--surface2); }
+    .admin-table th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; border-bottom: 0.5px solid var(--border); background: var(--surface2); white-space: nowrap; }
+    .admin-table th.sortable { cursor: pointer; user-select: none; }
+    .admin-table th.sortable:hover { color: var(--clay); }
+    .sort-icon { margin-left: 3px; font-size: 10px; opacity: 0.35; }
+    .admin-table th.sort-active .sort-icon { opacity: 1; color: var(--clay); }
     .admin-table td { padding: 10px 12px; border-bottom: 0.5px solid var(--border); vertical-align: middle; white-space: nowrap; }
     .admin-table td.wrap { white-space: normal; }
     .admin-table tr:last-child td { border-bottom: none; }
@@ -352,8 +356,13 @@
       <table class="admin-table">
         <thead>
           <tr>
-            <th>#</th><th>Alumno</th><th>DNI</th>
-            <th>Exámenes dados</th><th>Pendientes</th><th>En revisión</th><th>Promedio</th>
+            <th>#</th>
+            <th class="sortable" onclick="sortTable('alumnos','nombre')">Alumno <span class="sort-icon" id="si-alumnos-nombre">⇅</span></th>
+            <th class="sortable" onclick="sortTable('alumnos','dni')">DNI <span class="sort-icon" id="si-alumnos-dni">⇅</span></th>
+            <th class="sortable" onclick="sortTable('alumnos','hechos')">Exámenes dados <span class="sort-icon" id="si-alumnos-hechos">⇅</span></th>
+            <th class="sortable" onclick="sortTable('alumnos','pend')">Pendientes <span class="sort-icon" id="si-alumnos-pend">⇅</span></th>
+            <th class="sortable" onclick="sortTable('alumnos','rev')">En revisión <span class="sort-icon" id="si-alumnos-rev">⇅</span></th>
+            <th class="sortable" onclick="sortTable('alumnos','prom')">Promedio <span class="sort-icon" id="si-alumnos-prom">⇅</span></th>
           </tr>
         </thead>
         <tbody id="tbody-alumnos"></tbody>
@@ -370,7 +379,12 @@
     <div class="table-wrap">
       <table class="admin-table">
         <thead>
-          <tr><th>Alumno</th><th>DNI</th><th>Estado</th><th>Nota</th></tr>
+          <tr>
+            <th class="sortable" onclick="sortTable('notas','nombre')">Alumno <span class="sort-icon" id="si-notas-nombre">⇅</span></th>
+            <th class="sortable" onclick="sortTable('notas','dni')">DNI <span class="sort-icon" id="si-notas-dni">⇅</span></th>
+            <th class="sortable" onclick="sortTable('notas','estado')">Estado <span class="sort-icon" id="si-notas-estado">⇅</span></th>
+            <th class="sortable" onclick="sortTable('notas','nota')">Nota <span class="sort-icon" id="si-notas-nota">⇅</span></th>
+          </tr>
         </thead>
         <tbody id="tbody-notas"></tbody>
       </table>
@@ -403,7 +417,14 @@
     <div class="table-wrap">
       <table class="admin-table">
         <thead>
-          <tr><th>Alumno</th><th>DNI</th><th>Examen</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr>
+          <tr>
+            <th class="sortable" onclick="sortTable('confirmar','nombre')">Alumno <span class="sort-icon" id="si-confirmar-nombre">⇅</span></th>
+            <th class="sortable" onclick="sortTable('confirmar','dni')">DNI <span class="sort-icon" id="si-confirmar-dni">⇅</span></th>
+            <th class="sortable" onclick="sortTable('confirmar','examen')">Examen <span class="sort-icon" id="si-confirmar-examen">⇅</span></th>
+            <th class="sortable" onclick="sortTable('confirmar','estado')">Estado <span class="sort-icon" id="si-confirmar-estado">⇅</span></th>
+            <th class="sortable" onclick="sortTable('confirmar','nota')">Nota <span class="sort-icon" id="si-confirmar-nota">⇅</span></th>
+            <th>Acciones</th>
+          </tr>
         </thead>
         <tbody id="tbody-confirmar"></tbody>
       </table>
@@ -471,7 +492,11 @@
       </div>
       <div class="table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Alumno</th><th>DNI</th><th>Estado</th></tr></thead>
+          <thead><tr>
+            <th class="sortable" onclick="sortTable('historial','nombre')">Alumno <span class="sort-icon" id="si-historial-nombre">⇅</span></th>
+            <th class="sortable" onclick="sortTable('historial','dni')">DNI <span class="sort-icon" id="si-historial-dni">⇅</span></th>
+            <th class="sortable" onclick="sortTable('historial','estado')">Estado <span class="sort-icon" id="si-historial-estado">⇅</span></th>
+          </tr></thead>
           <tbody id="tbody-historial"></tbody>
         </table>
         <div class="empty-state" id="empty-historial" style="display:none;">Sin registros para esta fecha</div>
@@ -687,7 +712,7 @@ function doLogin() {
     })
     .catch(err => {
       clearBtnLoading(btn);
-      document.getElementById("login-error").textContent = "Error: " + (err && err.message ? err.message : String(err));
+      document.getElementById("login-error").textContent = "Sin conexión. Verifica tu internet e intenta de nuevo.";
     });
 }
 
@@ -714,7 +739,7 @@ function doAdminStep1() {
     })
     .catch(err => {
       clearBtnLoading(btn);
-      document.getElementById("login-error").textContent = "Error: " + (err && err.message ? err.message : String(err));
+      document.getElementById("login-error").textContent = "Sin conexión. Verifica tu internet e intenta de nuevo.";
     });
 }
 
@@ -744,7 +769,7 @@ function doAdminLogin() {
     .catch(err => {
       clearBtnLoading(btn);
       hideLoading();
-      document.getElementById("login-error").textContent = "Error: " + (err && err.message ? err.message : String(err));
+      document.getElementById("login-error").textContent = "Sin conexión. Verifica tu internet e intenta de nuevo.";
     });
 }
 
@@ -973,33 +998,61 @@ function renderAdminStats() {
     </div>`;
 }
 
+/* ── SORTING ── */
+const sortState = {};
+function sortTable(key, col) {
+  if (!sortState[key]) sortState[key] = { col: null, dir: 'asc' };
+  const s = sortState[key];
+  s.dir = s.col === col ? (s.dir === 'asc' ? 'desc' : 'asc') : 'asc';
+  s.col = col;
+  document.querySelectorAll(`[id^="si-${key}-"]`).forEach(el => { el.textContent = '⇅'; el.closest('th').classList.remove('sort-active'); });
+  const icon = document.getElementById(`si-${key}-${col}`);
+  if (icon) { icon.textContent = s.dir === 'asc' ? '↑' : '↓'; icon.closest('th').classList.add('sort-active'); }
+  if (key === 'alumnos')   renderAlumnos(alumnosSearch);
+  else if (key === 'notas')     renderNotasExamen();
+  else if (key === 'confirmar') renderConfirmar();
+  else if (key === 'historial') renderHistorialFecha();
+}
+function applySort(rows, key, getVal) {
+  const s = sortState[key];
+  if (!s || !s.col) return rows;
+  return [...rows].sort((a, b) => {
+    const va = getVal(a, s.col), vb = getVal(b, s.col);
+    if (typeof va === 'number' && typeof vb === 'number') return s.dir === 'asc' ? va - vb : vb - va;
+    return s.dir === 'asc' ? String(va??'').localeCompare(String(vb??'')) : String(vb??'').localeCompare(String(va??''));
+  });
+}
+
 /* ── ALUMNOS ── */
 let alumnosSearch = "";
 function filterAlumnos(v) { alumnosSearch = v; renderAlumnos(v); }
 
 function renderAlumnos(q) {
-  let lista = ALUMNOS;
-  if (q) lista = lista.filter(a=>a.nombre.toLowerCase().includes(q.toLowerCase())||a.dni.includes(q));
-  const tbody = document.getElementById("tbody-alumnos");
-  const empty = document.getElementById("empty-alumnos");
-  if (!lista.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
-  empty.style.display = "none";
-  tbody.innerHTML = lista.map((a,i) => {
+  let lista = ALUMNOS.map(a => {
     const regs = getRegistros(a.dni);
     const hechos = regs.filter(r=>r.estado==="aprobado"||r.estado==="desaprobado").length;
     const rev = regs.filter(r=>r.estado==="revision").length;
     const pend = Math.max(0, EXAMENES.length - regs.filter(r=>r.estado!=="pendiente").length);
     const prom = getPromedio(a.dni);
-    return `<tr>
-      <td style="color:var(--text-muted);">${i+1}</td>
-      <td style="font-weight:500;" class="wrap">${a.nombre}</td>
-      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.dni}</td>
-      <td>${hechos} / ${EXAMENES.length}</td>
-      <td style="color:var(--red-text);">${pend}</td>
-      <td style="color:var(--amber-text);">${rev}</td>
-      <td>${avgPill(prom)}</td>
-    </tr>`;
-  }).join("");
+    return { ...a, hechos, rev, pend, prom };
+  });
+  if (q) lista = lista.filter(a=>a.nombre.toLowerCase().includes(q.toLowerCase())||a.dni.includes(q));
+  lista = applySort(lista, 'alumnos', (a, col) => ({
+    nombre: a.nombre, dni: a.dni, hechos: a.hechos, pend: a.pend, rev: a.rev, prom: a.prom ?? -1
+  })[col] ?? '');
+  const tbody = document.getElementById("tbody-alumnos");
+  const empty = document.getElementById("empty-alumnos");
+  if (!lista.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display = "none";
+  tbody.innerHTML = lista.map((a,i) => `<tr>
+    <td style="color:var(--text-muted);">${i+1}</td>
+    <td style="font-weight:500;" class="wrap">${a.nombre}</td>
+    <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.dni}</td>
+    <td>${a.hechos} / ${EXAMENES.length}</td>
+    <td style="color:var(--red-text);">${a.pend}</td>
+    <td style="color:var(--amber-text);">${a.rev}</td>
+    <td>${avgPill(a.prom)}</td>
+  </tr>`).join("");
 }
 
 /* ── NOTAS POR EXAMEN ── */
@@ -1010,19 +1063,21 @@ function populateExamenSelect() {
 
 function renderNotasExamen() {
   const examId = parseInt(document.getElementById("select-examen").value);
-  const tbody = document.getElementById("tbody-notas");
-  const rows = ALUMNOS.map(a => {
+  const maxN = [6,23].includes(examId) ? 40 : 20;
+  let rows = ALUMNOS.map(a => {
     const reg = REGISTROS.find(r=>r.dni===a.dni&&r.exam_id===examId);
-    const estado = reg ? reg.estado : "pendiente";
-    const nota = reg && reg.nota!==null ? reg.nota+"/20" : "—";
-    return `<tr>
-      <td style="font-weight:500;" class="wrap">${a.nombre}</td>
-      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.dni}</td>
-      <td>${statusBadge(estado)}</td>
-      <td style="font-weight:500;">${nota}</td>
-    </tr>`;
-  }).join("");
-  tbody.innerHTML = rows;
+    return { nombre: a.nombre, dni: a.dni, estado: reg ? reg.estado : "pendiente", notaVal: reg&&reg.nota!==null ? reg.nota : null };
+  });
+  rows = applySort(rows, 'notas', (r, col) => ({
+    nombre: r.nombre, dni: r.dni, estado: r.estado, nota: r.notaVal ?? -1
+  })[col] ?? '');
+  const tbody = document.getElementById("tbody-notas");
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td style="font-weight:500;" class="wrap">${r.nombre}</td>
+    <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
+    <td>${statusBadge(r.estado)}</td>
+    <td style="font-weight:500;">${r.notaVal !== null ? r.notaVal+'/'+maxN : '—'}</td>
+  </tr>`).join("");
 
   // resumen del examen
   const regsEx = REGISTROS.filter(r=>r.exam_id===examId&&r.nota!==null&&!isNaN(r.nota));
@@ -1115,10 +1170,14 @@ function renderConfirmar() {
   if (!rows.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
   empty.style.display = "none";
 
-  tbody.innerHTML = rows.map(r => {
+  let rows2 = applySort(rows, 'confirmar', (r, col) => ({
+    nombre: r.nombre, dni: r.dni, examen: r.examen, estado: r.estado, nota: r.nota ?? -1
+  })[col] ?? '');
+  tbody.innerHTML = rows2.map(r => {
     const canAct = r.estado==="revision";
+    const maxNota = [6,23].includes(r.exam_id) ? 40 : 20;
     const notaInput = (r.estado==="revision"||r.estado==="aprobado"||r.estado==="desaprobado")
-      ? `<input class="nota-input" type="number" min="0" max="20" placeholder="0-20" value="${r.nota??''}" id="ni-${r.dni}-${r.exam_id}" />`
+      ? `<input class="nota-input" type="number" min="0" max="${maxNota}" placeholder="0-${maxNota}" value="${r.nota??''}" id="ni-${r.dni}-${r.exam_id}" />`
       : `<span style="color:var(--text-hint)">—</span>`;
     return `<tr>
       <td style="font-weight:500;" class="wrap">${r.nombre}</td>
@@ -1137,7 +1196,8 @@ function renderConfirmar() {
 function confirmar(dni, examId, estado, btn) {
   const ni = document.getElementById(`ni-${dni}-${examId}`);
   const nota = ni && ni.value !== "" ? parseInt(ni.value) : null;
-  if (ni && ni.value !== "" && (isNaN(nota)||nota<0||nota>20)) { alert("Nota inválida (0–20)."); return; }
+  const maxNota = [6,23].includes(Number(examId)) ? 40 : 20;
+  if (ni && ni.value !== "" && (isNaN(nota)||nota<0||nota>maxNota)) { alert(`Nota inválida (0–${maxNota}).`); return; }
 
   const row = btn.closest("tr");
   const actionBtns = row.querySelectorAll(".action-btn");
@@ -1382,16 +1442,22 @@ function renderHistorialFecha() {
   const empty = document.getElementById("empty-historial");
   if (!regs.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
   empty.style.display="none";
-  tbody.innerHTML = ALUMNOS.map(a => {
+  let rows = ALUMNOS.map(a => {
     const r = regs.find(x=>x.dni===a.dni);
-    if (!r) return "";
+    if (!r) return null;
+    return { nombre: a.nombre, dni: a.dni, estado: r.estado };
+  }).filter(Boolean);
+  rows = applySort(rows, 'historial', (r, col) => ({
+    nombre: r.nombre, dni: r.dni, estado: r.estado
+  })[col] ?? '');
+  tbody.innerHTML = rows.map(r => {
     const k = r.estado==="presente"?"done":r.estado==="tardanza"?"review":"missing";
     return `<tr>
-      <td style="font-weight:500;" class="wrap">${a.nombre}</td>
-      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.dni}</td>
+      <td style="font-weight:500;" class="wrap">${r.nombre}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
       <td><span class="badge ${k}">${estadoLabel(r.estado)}</span></td>
     </tr>`;
-  }).filter(Boolean).join("");
+  }).join("");
 }
 
 /* ── inicializar tab asistencia ── */
