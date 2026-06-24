@@ -164,6 +164,16 @@
     .tbody-alumnos-clickable tr:hover td { background: var(--surface2); }
     /* Ícono SVG inline en botones */
     .icon-btn { display: inline-flex; align-items: center; gap: 5px; }
+    /* Paginación */
+    .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 10px 0 4px; }
+    .page-btn { background: var(--surface); border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 5px 13px; font-size: 14px; cursor: pointer; color: var(--text); }
+    .page-btn:hover:not(:disabled) { background: var(--surface2); }
+    .page-btn:disabled { opacity: 0.35; cursor: default; }
+    .page-info { font-size: 12px; color: var(--text-muted); }
+    /* Esqueleto de carga en tab */
+    .tab-loading { display: flex; flex-direction: column; gap: 10px; padding: 1rem 0; }
+    .skel-row { height: 36px; background: linear-gradient(90deg, var(--surface2) 25%, var(--surface) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: skel 1.2s infinite; border-radius: var(--radius); }
+    @keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
     /* ADMIN */
     #page-admin { display: none; max-width: 960px; margin: 0 auto; padding: 1.5rem; }
@@ -184,6 +194,20 @@
     .astat .alabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
     .astat .avalue { font-size: 26px; font-weight: 500; }
     .astat .asub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    /* Podio */
+    .podio-wrap { margin-bottom: 1.5rem; }
+    .podio-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .podio { display: flex; align-items: flex-end; justify-content: center; gap: 10px; }
+    .podio-place { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 160px; }
+    .podio-block { width: 100%; border-radius: var(--radius) var(--radius) 0 0; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; }
+    .podio-block.p1 { height: 90px; background: linear-gradient(160deg,#C9A227,#A07818); }
+    .podio-block.p2 { height: 68px; background: linear-gradient(160deg,#9AACB8,#6E8898); }
+    .podio-block.p3 { height: 52px; background: linear-gradient(160deg,#C47B42,#8B4E1E); }
+    .podio-base { width: 100%; background: var(--surface2); border: 0.5px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 8px 6px 10px; text-align: center; }
+    .podio-base .pb-name { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .podio-base .pb-prom { font-size: 18px; font-weight: 700; color: var(--clay); margin: 2px 0; }
+    .podio-base .pb-sub  { font-size: 11px; color: var(--text-muted); }
+    .podio-empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 1.5rem 0; }
 
     /* Tables */
     .table-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto; margin-bottom: 1.5rem; -webkit-overflow-scrolling: touch; }
@@ -415,6 +439,10 @@
   <!-- TAB ESTADÍSTICAS -->
   <div id="tab-stats" class="tab-content active">
     <div class="admin-stats" id="admin-stats-cards"></div>
+    <div class="podio-wrap">
+      <div class="podio-title">Ranking por promedio</div>
+      <div id="podio-container"></div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;" id="stats-bottom-grid"></div>
   </div>
 
@@ -440,12 +468,13 @@
       </table>
       <div class="empty-state" id="empty-alumnos" style="display:none;">Sin resultados</div>
     </div>
+    <div id="pag-alumnos"></div>
   </div>
 
   <!-- TAB NOTAS POR EXAMEN -->
   <div id="tab-notas" class="tab-content">
     <div class="search-row">
-      <select id="select-examen" onchange="renderNotasExamen()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;"></select>
+      <select id="select-examen" onchange="pageState.notas=1;renderNotasExamen()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;outline:none;"></select>
     </div>
     <div class="table-wrap">
       <table class="admin-table">
@@ -461,6 +490,7 @@
       </table>
       <div class="empty-state" id="empty-notas" style="display:none;">Sin datos</div>
     </div>
+    <div id="pag-notas"></div>
     <div id="notas-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem;"></div>
   </div>
 
@@ -501,6 +531,7 @@
       </table>
       <div class="empty-state" id="empty-confirmar" style="display:none;">Sin registros en revisión</div>
     </div>
+    <div id="pag-confirmar"></div>
   </div>
 
   <!-- TAB ASISTENCIA -->
@@ -535,6 +566,7 @@
             <input type="text" id="nc-tema" placeholder="Ej: Introducción al barro" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;" />
           </div>
           <button class="save-asist-btn" onclick="crearClase()" id="btn-crear-clase">Crear clase</button>
+          <button class="filter-btn" onclick="toggleNuevaClase()">Cancelar</button>
         </div>
         <div id="nc-error" style="font-size:12px;color:var(--red-text);margin-top:6px;display:none;"></div>
       </div>
@@ -603,6 +635,7 @@
         </table>
         <div class="empty-state" id="empty-historial" style="display:none;">Sin registros para esta fecha</div>
       </div>
+      <div id="pag-historial"></div>
     </div>
 
   </div>
@@ -708,6 +741,11 @@ let REGISTROS = [];
 let ASISTENCIA = [];
 let CLASES = [];
 let pendingAsist = {}; // { fecha: { dni: estado } } — cambios no guardados
+let registrosLoaded = false, asistenciaLoaded = false;
+let registrosFetching = false, asistenciaFetching = false;
+let registrosCallbacks = [], asistenciaCallbacks = [];
+const PAGE_SIZE = 15;
+const pageState = { alumnos: 1, notas: 1, confirmar: 1, historial: 1 };
 
 let currentUser = null;
 let isAdmin = false;
@@ -882,7 +920,9 @@ function doAdminLogin() {
         return;
       }
       currentUser = res.admin; isAdmin = true;
-      ALUMNOS = res.alumnos; EXAMENES = res.examenes; REGISTROS = res.registros; ASISTENCIA = res.asistencia; CLASES = res.clases || [];
+      ALUMNOS = res.alumnos; EXAMENES = res.examenes; CLASES = res.clases || [];
+      REGISTROS = []; ASISTENCIA = [];
+      registrosLoaded = false; asistenciaLoaded = false;
       document.getElementById("header-user").style.display = "flex";
       document.getElementById("header-name").textContent = "Administrador";
       document.getElementById("admin-name").textContent = currentUser.nombre;
@@ -1045,16 +1085,113 @@ function switchTab(id, btn) {
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   btn.classList.add("active");
+  const needsReg = ['tab-stats','tab-alumnos','tab-notas','tab-confirmar','tab-pending'].includes(id);
+  if (needsReg && !registrosLoaded) {
+    loadRegistros(() => renderTabContent(id));
+    return;
+  }
+  if (id === 'tab-asistencia' && !asistenciaLoaded) {
+    loadAsistencia(() => initAsistencia());
+    return;
+  }
+  renderTabContent(id);
+}
+
+function renderTabContent(id) {
+  if (id === 'tab-stats')          renderAdminStats();
+  else if (id === 'tab-alumnos')   renderAlumnos(alumnosSearch);
+  else if (id === 'tab-notas')     renderNotasExamen();
+  else if (id === 'tab-confirmar') renderConfirmar();
+  else if (id === 'tab-pending')   renderPending(pendingSearch);
+  else if (id === 'tab-asistencia') initAsistencia();
 }
 
 function renderAllAdmin() {
-  renderAdminStats();
-  renderAlumnos("");
   populateExamenSelect();
-  renderNotasExamen();
-  renderPending("");
-  renderConfirmar();
   initAsistencia();
+  // mostrar esqueleto en tabs que necesitan registros
+  ['tab-stats','tab-alumnos','tab-notas','tab-confirmar'].forEach(showTabSkeleton);
+  // cargar registros en fondo; al terminar renderizar todo
+  loadRegistros(() => {
+    renderAdminStats();
+    renderAlumnos("");
+    renderNotasExamen();
+    renderConfirmar();
+    renderPending("");
+  });
+}
+
+function showTabSkeleton(tabId) {
+  const skels = Array.from({length: 5}, () => `<div class="skel-row"></div>`).join('');
+  const targets = {
+    'tab-stats':     'admin-stats-cards',
+    'tab-alumnos':   'tbody-alumnos',
+    'tab-notas':     'tbody-notas',
+    'tab-confirmar': 'tbody-confirmar',
+  };
+  const el = document.getElementById(targets[tabId]);
+  if (el) el.innerHTML = `<tr><td colspan="10"><div class="tab-loading">${skels}</div></td></tr>`;
+}
+
+/* ── CARGA LAZY ── */
+function loadRegistros(cb) {
+  if (registrosLoaded) { cb && cb(); return; }
+  if (cb) registrosCallbacks.push(cb);
+  if (registrosFetching) return;
+  registrosFetching = true;
+  gasCall({ action: 'getRegistros' })
+    .then(res => {
+      REGISTROS = res.registros || [];
+      registrosLoaded = true;
+      registrosFetching = false;
+      const cbs = registrosCallbacks.splice(0);
+      cbs.forEach(fn => fn());
+    })
+    .catch(() => { registrosFetching = false; });
+}
+
+function loadAsistencia(cb) {
+  if (asistenciaLoaded) { cb && cb(); return; }
+  if (cb) asistenciaCallbacks.push(cb);
+  if (asistenciaFetching) return;
+  asistenciaFetching = true;
+  gasCall({ action: 'getAsistencia' })
+    .then(res => {
+      ASISTENCIA = res.asistencia || [];
+      asistenciaLoaded = true;
+      asistenciaFetching = false;
+      const cbs = asistenciaCallbacks.splice(0);
+      cbs.forEach(fn => fn());
+    })
+    .catch(() => { asistenciaFetching = false; });
+}
+
+/* ── PAGINACIÓN ── */
+function paginate(list, key) {
+  const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  pageState[key] = Math.min(Math.max(pageState[key] || 1, 1), pages);
+  const start = (pageState[key] - 1) * PAGE_SIZE;
+  return { items: list.slice(start, start + PAGE_SIZE), cur: pageState[key], pages, total: list.length };
+}
+
+function renderPagination(key, cur, pages, total) {
+  if (pages <= 1) return '';
+  const from = (cur - 1) * PAGE_SIZE + 1;
+  const to   = Math.min(cur * PAGE_SIZE, total);
+  return `<div class="pagination">
+    <span class="page-info">${from}–${to} de ${total}</span>
+    <button class="page-btn" onclick="changePage('${key}',-1)" ${cur<=1?'disabled':''}>‹</button>
+    <span class="page-info">${cur} / ${pages}</span>
+    <button class="page-btn" onclick="changePage('${key}',1)" ${cur>=pages?'disabled':''}>›</button>
+  </div>`;
+}
+
+function changePage(key, delta) {
+  pageState[key] = (pageState[key] || 1) + delta;
+  if (key === 'alumnos')   renderAlumnos(alumnosSearch);
+  else if (key === 'notas')     renderNotasExamen();
+  else if (key === 'confirmar') renderConfirmar();
+  else if (key === 'historial') renderHistorialFecha();
 }
 
 /* ── ESTADÍSTICAS ── */
@@ -1093,6 +1230,51 @@ function renderAdminStats() {
     <div class="astat"><div class="alabel">Nota más alta</div><div class="avalue" style="color:var(--green-text)">${maxNota}</div><div class="asub">Nota más baja: ${minNota}</div></div>
   `;
 
+  // podio ranking por promedio
+  const ranking = ALUMNOS.map(a => {
+    const notas = getRegistros(a.dni).filter(r => r.nota !== null && !isNaN(r.nota)).map(r => r.nota);
+    const prom = notas.length ? +(notas.reduce((s,n) => s+n, 0) / notas.length).toFixed(2) : null;
+    return { nombre: a.nombre, prom, examsDados: notas.length };
+  }).filter(a => a.prom !== null).sort((a,b) => b.prom - a.prom);
+
+  const podioEl = document.getElementById("podio-container");
+  if (ranking.length < 1) {
+    podioEl.innerHTML = `<div class="podio-empty">Sin datos suficientes para el ranking.</div>`;
+  } else {
+    // orden visual: 2°, 1°, 3°
+    const top3 = ranking.slice(0, 3);
+    const visual = top3.length === 1 ? [null, top3[0], null]
+                 : top3.length === 2 ? [top3[1], top3[0], null]
+                 : [top3[1], top3[0], top3[2]];
+    const labels = ['2°', '1°', '3°'];
+    const classes = ['p2', 'p1', 'p3'];
+
+    const podioHtml = visual.map((a, vi) => {
+      if (!a) return `<div class="podio-place" style="opacity:0;pointer-events:none;"></div>`;
+      return `<div class="podio-place">
+        <div class="podio-block ${classes[vi]}">${labels[vi]}</div>
+        <div class="podio-base">
+          <div class="pb-name" title="${a.nombre}">${a.nombre.split(' ').slice(0,2).join(' ')}</div>
+          <div class="pb-prom">${a.prom}</div>
+          <div class="pb-sub">${a.examsDados} examen${a.examsDados !== 1 ? 'es' : ''}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const listHtml = ranking.slice(3).map((a, i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius);background:var(--surface);border:0.5px solid var(--border);margin-bottom:5px;">
+        <span style="font-size:12px;color:var(--text-muted);min-width:22px;text-align:right;">${i+4}°</span>
+        <span style="flex:1;font-size:13px;font-weight:500;">${a.nombre}</span>
+        <span style="font-size:13px;font-weight:600;color:var(--clay);">${a.prom}</span>
+        <span style="font-size:11px;color:var(--text-muted);">${a.examsDados} ex.</span>
+      </div>`).join('');
+
+    podioEl.innerHTML = `
+      <div class="podio">${podioHtml}</div>
+      ${listHtml ? `<div style="margin-top:1rem;">${listHtml}</div>` : ''}
+    `;
+  }
+
   // tabla de avance por examen
   const rowsHtml = EXAMENES.map(ex => {
     const regsEx = REGISTROS.filter(r=>r.exam_id===ex.id);
@@ -1128,6 +1310,7 @@ function sortTable(key, col) {
   const s = sortState[key];
   s.dir = s.col === col ? (s.dir === 'asc' ? 'desc' : 'asc') : 'asc';
   s.col = col;
+  if (pageState[key] !== undefined) pageState[key] = 1;
   document.querySelectorAll(`[id^="si-${key}-"]`).forEach(el => { el.textContent = '⇅'; el.closest('th').classList.remove('sort-active'); });
   const icon = document.getElementById(`si-${key}-${col}`);
   if (icon) { icon.textContent = s.dir === 'asc' ? '↑' : '↓'; icon.closest('th').classList.add('sort-active'); }
@@ -1148,7 +1331,7 @@ function applySort(rows, key, getVal) {
 
 /* ── ALUMNOS ── */
 let alumnosSearch = "";
-function filterAlumnos(v) { alumnosSearch = v; renderAlumnos(v); }
+function filterAlumnos(v) { alumnosSearch = v; pageState.alumnos = 1; renderAlumnos(v); }
 
 function renderAlumnos(q) {
   let lista = ALUMNOS.map(a => {
@@ -1165,11 +1348,13 @@ function renderAlumnos(q) {
   })[col] ?? '');
   const tbody = document.getElementById("tbody-alumnos");
   const empty = document.getElementById("empty-alumnos");
-  if (!lista.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  if (!lista.length) { tbody.innerHTML=""; empty.style.display="block"; document.getElementById("pag-alumnos").innerHTML=""; return; }
   empty.style.display = "none";
+  const { items, cur, pages, total } = paginate(lista, 'alumnos');
+  const offset = (cur - 1) * PAGE_SIZE;
   tbody.classList.add("tbody-alumnos-clickable");
-  tbody.innerHTML = lista.map((a,i) => `<tr onclick="abrirDetalleAlumno('${a.dni}')" title="Ver detalle de ${a.nombre}">
-    <td style="color:var(--text-muted);">${i+1}</td>
+  tbody.innerHTML = items.map((a,i) => `<tr onclick="abrirDetalleAlumno('${a.dni}')" title="Ver detalle de ${a.nombre}">
+    <td style="color:var(--text-muted);">${offset+i+1}</td>
     <td style="font-weight:500;" class="wrap">${a.nombre}</td>
     <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.dni}</td>
     <td>${a.hechos} / ${EXAMENES.length}</td>
@@ -1177,6 +1362,7 @@ function renderAlumnos(q) {
     <td style="color:var(--amber-text);">${a.rev}</td>
     <td>${avgPill(a.prom)}</td>
   </tr>`).join("");
+  document.getElementById("pag-alumnos").innerHTML = renderPagination('alumnos', cur, pages, total);
 }
 
 /* ── NOTAS POR EXAMEN ── */
@@ -1195,13 +1381,15 @@ function renderNotasExamen() {
   rows = applySort(rows, 'notas', (r, col) => ({
     nombre: r.nombre, dni: r.dni, estado: r.estado, nota: r.notaVal ?? -1
   })[col] ?? '');
+  const { items, cur, pages, total } = paginate(rows, 'notas');
   const tbody = document.getElementById("tbody-notas");
-  tbody.innerHTML = rows.map(r => `<tr>
+  tbody.innerHTML = items.map(r => `<tr>
     <td style="font-weight:500;" class="wrap">${r.nombre}</td>
     <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
     <td>${statusBadge(r.estado)}</td>
     <td style="font-weight:500;">${r.notaVal !== null ? r.notaVal+'/'+maxN : '—'}</td>
   </tr>`).join("");
+  document.getElementById("pag-notas").innerHTML = renderPagination('notas', cur, pages, total);
 
   // resumen del examen
   const regsEx = REGISTROS.filter(r=>r.exam_id===examId&&r.nota!==null&&!isNaN(r.nota));
@@ -1266,12 +1454,12 @@ function copyMsg(nombre, examen, enlace, btn) {
 
 /* ── CONFIRMAR EXÁMENES ── */
 function filterConfirmar(val, btn) {
-  confirmarFilter = val;
+  confirmarFilter = val; pageState.confirmar = 1;
   document.querySelectorAll("#tab-confirmar .filter-btn").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
   renderConfirmar();
 }
-function searchConfirmar(v) { confirmarSearch = v; renderConfirmar(); }
+function searchConfirmar(v) { confirmarSearch = v; pageState.confirmar = 1; renderConfirmar(); }
 
 function renderConfirmar() {
   let rows = [];
@@ -1291,13 +1479,14 @@ function renderConfirmar() {
 
   const tbody = document.getElementById("tbody-confirmar");
   const empty = document.getElementById("empty-confirmar");
-  if (!rows.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  if (!rows.length) { tbody.innerHTML=""; empty.style.display="block"; document.getElementById("pag-confirmar").innerHTML=""; return; }
   empty.style.display = "none";
 
-  let rows2 = applySort(rows, 'confirmar', (r, col) => ({
+  rows = applySort(rows, 'confirmar', (r, col) => ({
     nombre: r.nombre, dni: r.dni, examen: r.examen, estado: r.estado, nota: r.nota ?? -1
   })[col] ?? '');
-  tbody.innerHTML = rows2.map(r => {
+  const { items, cur, pages, total } = paginate(rows, 'confirmar');
+  tbody.innerHTML = items.map(r => {
     const canAct = r.estado==="revision";
     const maxNota = [6,23].includes(r.exam_id) ? 40 : 20;
     const notaInput = (r.estado==="revision"||r.estado==="aprobado"||r.estado==="desaprobado")
@@ -1315,6 +1504,7 @@ function renderConfirmar() {
       </div></td>
     </tr>`;
   }).join("");
+  document.getElementById("pag-confirmar").innerHTML = renderPagination('confirmar', cur, pages, total);
 }
 
 function confirmar(dni, examId, estado, btn) {
@@ -1331,7 +1521,7 @@ function confirmar(dni, examId, estado, btn) {
 
   gasCall({ action: 'confirmarExamen', dni, examId, estado, nota: nota !== null ? nota : '' })
     .then(res => {
-      REGISTROS = res.registros;
+      REGISTROS = res.registros; registrosLoaded = true;
       renderConfirmar();
       renderAdminStats();
       renderAlumnos(alumnosSearch);
@@ -1483,7 +1673,7 @@ function guardarEdicionClase() {
       clearBtnLoading(btn);
       if (!res.ok) { errEl.textContent = res.error || "Error al guardar."; errEl.style.display = "block"; return; }
       CLASES = res.clases;
-      if (res.asistencia) ASISTENCIA = res.asistencia;
+      if (res.asistencia) { ASISTENCIA = res.asistencia; asistenciaLoaded = true; }
       document.getElementById("editar-clase-form").style.display = "none";
       poblarSelectorClases(fechaNew);
     })
@@ -1503,7 +1693,7 @@ function confirmarEliminarClase() {
       clearBtnLoading(btn);
       if (!res.ok) { alert("Error al eliminar: " + (res.error || "")); return; }
       CLASES = res.clases;
-      if (res.asistencia) ASISTENCIA = res.asistencia;
+      if (res.asistencia) { ASISTENCIA = res.asistencia; asistenciaLoaded = true; }
       document.getElementById("asist-tomar-list").innerHTML = "";
       document.getElementById("asist-clase-info").style.display = "none";
       document.getElementById("asist-buscar-wrap").style.display = "none";
@@ -1604,8 +1794,8 @@ function guardarAsistencia() {
   gasCall({ action: 'guardarAsistencia', fecha, records })
     .then(res => {
       clearBtnLoading(btn);
-      ASISTENCIA = res.asistencia;
-      delete pendingAsist[fecha]; // limpiar pendientes ya guardados
+      ASISTENCIA = res.asistencia; asistenciaLoaded = true;
+      delete pendingAsist[fecha];
       const notice = document.getElementById("save-notice");
       notice.style.display = "inline";
       setTimeout(() => notice.style.display = "none", 2500);
@@ -1654,7 +1844,7 @@ function renderHistorialFecha() {
   const regs = ASISTENCIA.filter(a=>a.fecha===fecha);
   const tbody = document.getElementById("tbody-historial");
   const empty = document.getElementById("empty-historial");
-  if (!regs.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  if (!regs.length) { tbody.innerHTML=""; empty.style.display="block"; document.getElementById("pag-historial").innerHTML=""; return; }
   empty.style.display="none";
   let rows = ALUMNOS.map(a => {
     const r = regs.find(x=>x.dni===a.dni);
@@ -1664,7 +1854,8 @@ function renderHistorialFecha() {
   rows = applySort(rows, 'historial', (r, col) => ({
     nombre: r.nombre, dni: r.dni, estado: r.estado
   })[col] ?? '');
-  tbody.innerHTML = rows.map(r => {
+  const { items, cur, pages, total } = paginate(rows, 'historial');
+  tbody.innerHTML = items.map(r => {
     const k = r.estado==="presente"?"done":r.estado==="tardanza"?"review":"missing";
     return `<tr>
       <td style="font-weight:500;" class="wrap">${r.nombre}</td>
@@ -1672,6 +1863,7 @@ function renderHistorialFecha() {
       <td><span class="badge ${k}">${estadoLabel(r.estado)}</span></td>
     </tr>`;
   }).join("");
+  document.getElementById("pag-historial").innerHTML = renderPagination('historial', cur, pages, total);
 }
 
 /* ── inicializar tab asistencia ── */
