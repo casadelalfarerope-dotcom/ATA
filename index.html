@@ -1869,8 +1869,16 @@ function renderTomarAsistencia(fecha, q) {
 }
 
 function marcarPendiente(fecha, dni, estado) {
+  const saved = ASISTENCIA.find(r => r.dni === dni && r.fecha === fecha);
+  const savedEstado = saved ? saved.estado : "ausente";
   if (!pendingAsist[fecha]) pendingAsist[fecha] = {};
-  pendingAsist[fecha][dni] = estado;
+  if (estado === savedEstado) {
+    // volvió al estado guardado → ya no es un cambio pendiente
+    delete pendingAsist[fecha][dni];
+    if (Object.keys(pendingAsist[fecha]).length === 0) delete pendingAsist[fecha];
+  } else {
+    pendingAsist[fecha][dni] = estado;
+  }
   actualizarUnsavedBadge(fecha);
 }
 
