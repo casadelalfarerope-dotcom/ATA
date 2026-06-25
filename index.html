@@ -148,6 +148,28 @@
     .recup-label { font-size: 10px; color: #92400E; text-transform: uppercase; letter-spacing: 0.06em; }
     .recup-expired { font-size: 13px; color: var(--red-text); font-weight: 500; }
     .recup-nota-hint { font-size: 11px; color: #7B4BA8; font-style: italic; }
+    .stat-card.gold::before { background: linear-gradient(90deg,#F59E0B,#EF4444); }
+    .stat-card.gold .svalue { background: linear-gradient(90deg,#B45309,#991B1B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .podio-congrats-banner { display:flex; align-items:center; gap:10px; border-radius:var(--radius-lg); padding:0.85rem 1.1rem; font-size:13px; font-weight:500; margin-bottom:1rem; }
+    .podio-congrats-banner.podio-1 { background:#FEF9C3; border:1px solid #FDE047; color:#854D0E; }
+    .podio-congrats-banner.podio-2 { background:#F1F5F9; border:1px solid #CBD5E1; color:#334155; }
+    .podio-congrats-banner.podio-3 { background:#FFF7ED; border:1px solid #FED7AA; color:#92400E; }
+    /* Asistencia detallada alumno */
+    .asist-detail-header { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1rem; }
+    .asist-stat-pill { background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:5px 14px; font-size:12px; display:flex; align-items:center; gap:6px; }
+    .asist-stat-pill .pill-val { font-weight:700; font-size:14px; }
+    .asist-detail-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius); background:var(--surface); border:0.5px solid var(--border); margin-bottom:6px; }
+    .asist-detail-row .asist-icon { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; }
+    .asist-detail-row .asist-icon.p { background:var(--green-bg); color:var(--green-text); }
+    .asist-detail-row .asist-icon.t { background:var(--amber-bg); color:var(--amber-text); }
+    .asist-detail-row .asist-icon.a { background:var(--red-bg);   color:var(--red-text);   }
+    .asist-detail-row .asist-info { flex:1; }
+    .asist-detail-row .asist-clase-nombre { font-size:13px; font-weight:500; }
+    .asist-detail-row .asist-clase-fecha  { font-size:11px; color:var(--text-muted); margin-top:1px; }
+    .asist-detail-badge { font-size:11px; font-weight:600; padding:2px 9px; border-radius:100px; flex-shrink:0; }
+    .asist-detail-badge.p { background:var(--green-bg); color:var(--green-text); }
+    .asist-detail-badge.t { background:var(--amber-bg); color:var(--amber-text); }
+    .asist-detail-badge.a { background:var(--red-bg);   color:var(--red-text);   }
     .exam-sub.recup-hint { color: #92400E; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 5px; padding: 3px 7px; margin-top: 4px; font-size: 11px; display: inline-block; }
     .badge.fail { background: var(--red-bg);  color: var(--red-text);  font-size: 13px; font-weight: 600; padding: 3px 11px; }
 
@@ -991,6 +1013,8 @@ function doLogin() {
       }
       currentUser = res.alumno; isAdmin = false;
       EXAMENES = res.examenes; REGISTROS = res.registros; ASISTENCIA = res.asistencia;
+      CLASES = res.clases || [];
+      currentUser._ranking = res.ranking || null;
       document.getElementById("header-user").style.display = "flex";
       document.getElementById("header-name").textContent = currentUser.nombre;
       renderDashboard();
@@ -1129,9 +1153,16 @@ function renderDashboard() {
   const hechoIds = regs.filter(r => r.estado !== "pendiente").map(r => r.exam_id);
   const faltantes = EXAMENES.filter(e => !hechoIds.includes(e.id));
   const notas = hechos.filter(r=>r.nota!==null).map(r=>r.nota);
-  const prom = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : "—";
+  const promRaw = notas.length ? notas.reduce((a,b)=>a+b,0)/notas.length : null;
+  const prom = promRaw !== null ? parseFloat(promRaw.toFixed(2)) : "—";
 
   const aprobados = hechos.filter(r => r.estado === "aprobado").length;
+  const rk = currentUser._ranking;
+  const pos = rk ? rk.posicion : null;
+  const podioEmoji = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : null;
+  const rankLabel = pos ? `#${pos} de ${rk.total}` : '—';
+  const rankSub   = pos <= 3 ? `¡Estás en el podio!` : pos ? `top ${Math.round(pos/rk.total*100)}%` : '';
+
   document.getElementById("stats-grid").innerHTML = `
     <div class="stat-card clay">
       <div class="slabel">Exámenes dados</div>
@@ -1150,9 +1181,35 @@ function renderDashboard() {
     </div>
     <div class="stat-card green">
       <div class="slabel">Promedio general</div>
-      <div class="svalue">${prom ?? '—'}</div>
+      <div class="svalue">${prom}</div>
       <div class="ssub">sobre ${EXAMENES.length} exámenes</div>
+    </div>
+    <div class="stat-card ${pos<=3?'gold':'clay'}" style="grid-column:1/-1;">
+      <div class="slabel">Ranking</div>
+      <div class="svalue" style="font-size:22px;">${podioEmoji ? podioEmoji+' ' : ''}${rankLabel}</div>
+      <div class="ssub">${rankSub}</div>
     </div>`;
+
+  // Mensaje de felicitaciones para podio
+  const podioMsgs = {
+    1: '¡Felicitaciones! Eres el mejor alumno de la academia. ¡Sigue así!',
+    2: '¡Excelente! Estás en el segundo lugar. ¡Un gran esfuerzo!',
+    3: '¡Muy bien! Estás en el tercer lugar. ¡Sigue esforzándote!'
+  };
+  let podioEl = document.getElementById("podio-congrats");
+  if (!podioEl) {
+    podioEl = document.createElement("div");
+    podioEl.id = "podio-congrats";
+    document.getElementById("stats-grid").after(podioEl);
+  }
+  if (pos && podioMsgs[pos]) {
+    podioEl.innerHTML = `<div class="podio-congrats-banner podio-${pos}">
+      <span style="font-size:22px;">${podioEmoji}</span>
+      <span>${podioMsgs[pos]}</span>
+    </div>`;
+  } else {
+    podioEl.innerHTML = '';
+  }
 
   // temporizador de recuperación: mostrar si hay faltantes y aún no venció el plazo
   const banner = document.getElementById("recup-banner");
@@ -1183,7 +1240,7 @@ function renderDashboard() {
         const sub2 = r.recuperacion
           ? `<div class="exam-sub recup-hint">Rendido fuera de fecha — nota máxima alcanzable: 80% (${Math.round(maxN*0.8)}/${maxN})</div>`
           : '';
-        return `<div class="exam-row">
+        return `<div class="exam-row clickable" onclick="openModal(${r.exam_id})">
           <div class="exam-icon ${ok?'done':'missing'}">${ok ? svgCheck : svgX}</div>
           <div class="exam-info">
             <div class="exam-name">${ex.nombre}</div>
@@ -1799,35 +1856,45 @@ function estadoLabel(e) { return e==="presente"?"Presente":e==="tardanza"?"Tarda
 function renderDashAsistencia() {
   const { total, presentes, tardanzas, ausentes, pct } = asistStats(currentUser.dni);
   const regs = getAsistAlumno(currentUser.dni).sort((a,b)=>a.fecha.localeCompare(b.fecha));
-  const cls = asistClass(pct);
+  const cls  = asistClass(pct);
+  const el   = document.getElementById("dash-asist");
 
-  const chips = regs.map(r => {
-    const k = r.estado==="presente"?"p":r.estado==="tardanza"?"t":"a";
-    return `<span class="asist-chip ${k}" title="${r.fecha}">${fmtFecha(r.fecha)} — ${estadoLabel(r.estado)}</span>`;
+  if (total === 0) {
+    el.innerHTML = `<div class="exam-row"><span style="font-size:13px;color:var(--text-muted);">Sin registros de asistencia aún.</span></div>`;
+    return;
+  }
+
+  const svgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const svgClock = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  const svgX     = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+
+  const rows = regs.map((r, i) => {
+    const k     = r.estado==="presente" ? "p" : r.estado==="tardanza" ? "t" : "a";
+    const icono = k==="p" ? svgCheck : k==="t" ? svgClock : svgX;
+    const label = k==="p" ? "Presente" : k==="t" ? "Tardanza" : "Ausente";
+    const clase = CLASES.find(c => c.fecha === r.fecha);
+    const nombreClase = clase ? clase.nombre || `Clase del ${fmtFecha(r.fecha)}` : `Clase del ${fmtFecha(r.fecha)}`;
+    return `<div class="asist-detail-row">
+      <div class="asist-icon ${k}">${icono}</div>
+      <div class="asist-info">
+        <div class="asist-clase-nombre">${nombreClase}</div>
+        <div class="asist-clase-fecha">${fmtFecha(r.fecha)}</div>
+      </div>
+      <span class="asist-detail-badge ${k}">${label}</span>
+    </div>`;
   }).join("");
 
-  document.getElementById("dash-asist").innerHTML = total === 0
-    ? `<div class="exam-row"><span style="font-size:13px;color:var(--text-muted);">Sin registros de asistencia aún.</span></div>`
-    : `<div class="exam-row" style="flex-direction:column;align-items:stretch;gap:10px;">
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <span style="font-size:13px;font-weight:500;">${total} clase${total!==1?"s":""} registradas</span>
-            <span style="font-size:12px;color:var(--text-muted);">${presentes} pres. · ${tardanzas} tard. · ${ausentes} aus.</span>
-          </div>
-          <div class="asist-bar-wrap">
-            <div class="asist-bar"><div class="asist-bar-fill ${cls}" style="width:${pct??0}%"></div></div>
-            <span class="asist-pct ${cls}">${pct??0}%</span>
-          </div>
-        </div>
-        <div>
-          <div class="asist-legend">
-            <span><i class="dot p"></i>Presente</span>
-            <span><i class="dot t"></i>Tardanza (cuenta 50%)</span>
-            <span><i class="dot a"></i>Ausente</span>
-          </div>
-          <div class="asist-grid">${chips}</div>
-        </div>
-      </div>`;
+  el.innerHTML = `
+    <div class="asist-detail-header">
+      <div class="asist-stat-pill"><span class="pill-val" style="color:var(--green-text)">${presentes}</span> presentes</div>
+      <div class="asist-stat-pill"><span class="pill-val" style="color:var(--amber-text)">${tardanzas}</span> tardanzas</div>
+      <div class="asist-stat-pill"><span class="pill-val" style="color:var(--red-text)">${ausentes}</span> ausencias</div>
+      <div class="asist-stat-pill"><span class="pill-val" style="color:var(--${cls}-text)">${pct}%</span> asistencia</div>
+    </div>
+    <div class="asist-bar-wrap" style="margin-bottom:1rem;">
+      <div class="asist-bar"><div class="asist-bar-fill ${cls}" style="width:${pct??0}%"></div></div>
+    </div>
+    ${rows}`;
 }
 
 /* ── Admin: sub-tabs asistencia ── */
