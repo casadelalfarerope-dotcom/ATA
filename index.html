@@ -1195,15 +1195,25 @@ function renderDashboard() {
       }).join("");
 
   // pendientes
+  const esRecupPeriod = new Date() <= RECUP_DEADLINE;
   const missingEl = document.getElementById("list-missing");
   missingEl.innerHTML = faltantes.length === 0
     ? `<div class="exam-row"><span style="color:var(--text-muted);font-size:13px;">¡Completaste todos los exámenes!</span></div>`
-    : faltantes.map(ex => `
-        <div class="exam-row clickable" onclick="openModal(${ex.id})">
+    : faltantes.map(ex => {
+        const maxN = [6,23].includes(ex.id) ? 40 : 20;
+        const recupHint = esRecupPeriod
+          ? `<div class="exam-sub recup-hint" style="margin-top:4px;">Período de recuperación — nota máxima: ${Math.round(maxN*0.8)}/${maxN} (80%)</div>`
+          : '';
+        return `<div class="exam-row clickable" onclick="openModal(${ex.id})">
           <div class="exam-icon missing">!</div>
-          <div class="exam-info"><div class="exam-name">${ex.nombre}</div><div class="exam-sub">Toca para ver detalles y dar el examen</div></div>
+          <div class="exam-info">
+            <div class="exam-name">${ex.nombre}</div>
+            <div class="exam-sub">Toca para ver detalles y dar el examen</div>
+            ${recupHint}
+          </div>
           <span class="badge missing">Pendiente</span>
-        </div>`).join("");
+        </div>`;
+      }).join("");
 
   // revisión
   const secRev = document.getElementById("section-review");
