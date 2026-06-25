@@ -148,6 +148,7 @@
     .recup-label { font-size: 10px; color: #92400E; text-transform: uppercase; letter-spacing: 0.06em; }
     .recup-expired { font-size: 13px; color: var(--red-text); font-weight: 500; }
     .recup-nota-hint { font-size: 11px; color: #7B4BA8; font-style: italic; }
+    .exam-sub.recup-hint { color: #92400E; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 5px; padding: 3px 7px; margin-top: 4px; font-size: 11px; display: inline-block; }
     .badge.fail { background: var(--red-bg);  color: var(--red-text);  font-size: 13px; font-weight: 600; padding: 3px 11px; }
 
     /* MODAL */
@@ -1176,13 +1177,19 @@ function renderDashboard() {
         const nb = r.nota !== null
           ? (ok ? `<span class="badge nota">${r.nota}/${maxN}</span>` : `<span class="badge fail">${r.nota}/${maxN}</span>`)
           : "";
+        const fechaStr = fmtFechaExamen(r.fecha_examen);
+        const sub1 = `${ok?"Aprobado":"Desaprobado"}${fechaStr ? ' · ' + fechaStr : ''}`;
+        const sub2 = r.recuperacion
+          ? `<div class="exam-sub recup-hint">Rendido fuera de fecha — nota máxima alcanzable: 80% (${Math.round(maxN*0.8)}/${maxN})</div>`
+          : '';
         return `<div class="exam-row">
           <div class="exam-icon ${ok?'done':'missing'}">${ok ? svgCheck : svgX}</div>
           <div class="exam-info">
             <div class="exam-name">${ex.nombre}</div>
-            <div class="exam-sub">${ok?"Aprobado":"Desaprobado"}${r.recuperacion?' · Examen de recuperación':''}</div>
+            <div class="exam-sub">${sub1}</div>
+            ${sub2}
           </div>
-          ${recupBadge}${nb}
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">${recupBadge}${nb}</div>
         </div>`;
       }).join("");
 
@@ -1206,14 +1213,18 @@ function renderDashboard() {
       const maxN = [6,23].includes(r.exam_id) ? 40 : 20;
       const recupBadge = r.recuperacion ? `<span class="badge recup">Recuperación</span>` : "";
       const nb = r.nota !== null ? `<span class="badge nota">${r.nota}/${maxN}</span>` : "";
+      const fechaStr = fmtFechaExamen(r.fecha_examen);
+      const sub2 = r.recuperacion
+        ? `<div class="exam-sub recup-hint">Rendido fuera de fecha — nota máxima alcanzable: 80% (${Math.round(maxN*0.8)}/${maxN})</div>`
+        : '';
       return `<div class="exam-row clickable" onclick="openModal(${ex.id})">
         <div class="exam-icon review">…</div>
         <div class="exam-info">
           <div class="exam-name">${ex.nombre}</div>
-          <div class="exam-sub">Nota en revisión${r.recuperacion?' · Recuperación':''}</div>
+          <div class="exam-sub">En revisión${fechaStr ? ' · ' + fechaStr : ''}</div>
+          ${sub2}
         </div>
-        ${recupBadge}${nb}
-        <span class="badge review">En revisión</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">${recupBadge}${nb}<span class="badge review">Revisión</span></div>
       </div>`;
     }).join("");
   } else { secRev.style.display = "none"; }
@@ -1576,7 +1587,9 @@ function renderNotasExamen() {
   let rows = ALUMNOS.map(a => {
     const reg = REGISTROS.find(r=>r.dni===a.dni&&r.exam_id===examId);
     return { nombre: a.nombre, dni: a.dni, estado: reg ? reg.estado : "pendiente",
-      notaVal: reg&&reg.nota!==null ? reg.nota : null, recuperacion: reg ? !!reg.recuperacion : false };
+      notaVal: reg&&reg.nota!==null ? reg.nota : null,
+      recuperacion: reg ? !!reg.recuperacion : false,
+      fecha_examen: reg ? reg.fecha_examen : null };
   });
   rows = applySort(rows, 'notas', (r, col) => ({
     nombre: r.nombre, dni: r.dni, estado: r.estado, nota: r.notaVal ?? -1
@@ -1585,10 +1598,11 @@ function renderNotasExamen() {
   const tbody = document.getElementById("tbody-notas");
   tbody.innerHTML = items.map(r => {
     const recupBadge = r.recuperacion ? `<span class="badge recup" style="margin-left:4px;">Recup.</span>` : '';
+    const fechaStr = fmtFechaExamen(r.fecha_examen);
     return `<tr>
       <td style="font-weight:500;" class="wrap">${r.nombre}</td>
       <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
-      <td>${statusBadge(r.estado)}${recupBadge}</td>
+      <td>${statusBadge(r.estado)}${recupBadge}${fechaStr ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${fechaStr}</div>` : ''}</td>
       <td style="font-weight:500;">${r.notaVal !== null ? r.notaVal+'/'+maxN : '—'}</td>
     </tr>`;
   }).join("");
@@ -1671,7 +1685,8 @@ function renderConfirmar() {
       const reg = REGISTROS.find(r=>r.dni===a.dni&&r.exam_id===ex.id);
       rows.push({ nombre:a.nombre, dni:a.dni, examen:ex.nombre, exam_id:ex.id,
         estado: reg?reg.estado:"pendiente", nota: reg?reg.nota:null,
-        recuperacion: reg ? !!reg.recuperacion : false });
+        recuperacion: reg ? !!reg.recuperacion : false,
+        fecha_examen: reg ? reg.fecha_examen : null });
     });
   });
 
@@ -1699,10 +1714,12 @@ function renderConfirmar() {
     const notaInput = (r.estado==="revision"||r.estado==="aprobado"||r.estado==="desaprobado")
       ? `<input class="nota-input" type="number" min="0" max="${maxNota}" placeholder="0-${maxNota}" value="${r.nota??''}" id="ni-${r.dni}-${r.exam_id}" />${notaHint}`
       : `<span style="color:var(--text-hint)">—</span>`;
+    const fechaStr = fmtFechaExamen(r.fecha_examen);
+    const fechaSub = fechaStr ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${fechaStr}</div>` : '';
     return `<tr>
       <td style="font-weight:500;" class="wrap">${r.nombre}</td>
       <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
-      <td style="max-width:180px;" class="wrap">${r.examen}${recupBadge}</td>
+      <td style="max-width:180px;" class="wrap">${r.examen}${recupBadge}${fechaSub}</td>
       <td>${statusBadge(r.estado)}</td>
       <td>${notaInput}</td>
       <td><div class="actions-cell">
@@ -2119,6 +2136,14 @@ function initAsistencia() {
 }
 
 /* ── SUB-PESTAÑAS ESTADÍSTICAS ── */
+function fmtFechaExamen(fechaStr) {
+  if (!fechaStr) return null;
+  const d = new Date(fechaStr);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' })
+    + ', ' + d.toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
+}
+
 function switchDashTab(id, btn) {
   document.querySelectorAll('.dash-tab-panel').forEach(p => { p.style.display='none'; p.classList.remove('active'); });
   document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active'));
@@ -2190,10 +2215,12 @@ function abrirDetalleAlumno(dni) {
     else if (estado === "revision")    { notaStr = reg.nota !== null ? `${reg.nota}/${maxN}` : "—"; notaCls = "rev"; icono = iconDots; }
 
     const recupBadge = (reg && reg.recuperacion) ? `<span class="badge recup" style="font-size:10px;padding:2px 5px;">Recup.</span>` : '';
+    const fechaStr = reg ? fmtFechaExamen(reg.fecha_examen) : null;
+    const fechaSub = fechaStr ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${fechaStr}</div>` : '';
     return `<div class="alumno-exam-row">
       <span class="ae-num">${i + 1}</span>
       <span class="exam-icon ${notaCls === 'ap' ? 'done' : notaCls === 'des' ? 'missing' : notaCls === 'rev' ? 'review' : ''}" style="width:28px;height:28px;font-size:12px;">${icono}</span>
-      <span class="ae-name">${ex.nombre}${recupBadge}</span>
+      <div style="flex:1;min-width:0;"><div class="ae-name">${ex.nombre}${recupBadge}</div>${fechaSub}</div>
       <span class="ae-nota ${notaCls}">${notaStr}</span>
     </div>`;
   }).join("");
