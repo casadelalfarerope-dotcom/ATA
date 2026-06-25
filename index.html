@@ -90,21 +90,34 @@
     #page-dashboard { padding: 0; max-width: 860px; margin: 0 auto; display: none; }
     #page-dashboard.active { display: block; }
 
-    .dash-hero { background: var(--clay); padding: 1.75rem 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; }
-    .dash-avatar { width: 48px; height: 48px; border-radius: 50%; background: rgba(245,232,210,0.18); border: 1.5px solid rgba(245,232,210,0.35); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: #F5E8D2; flex-shrink: 0; letter-spacing: 0.02em; }
-    .dash-hero-text h2 { font-size: 20px; font-weight: 500; color: #F5E8D2; }
-    .dash-hero-text p { font-size: 13px; color: rgba(245,232,210,0.6); margin-top: 1px; }
+    .dash-hero { background: var(--clay); padding: 2rem 2rem 2.5rem; position: relative; overflow: hidden; }
+    .dash-hero::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:28px; background: var(--bg); border-radius: 24px 24px 0 0; }
+    .dash-hero-inner { display: flex; align-items: center; gap: 1.1rem; position: relative; z-index: 1; }
+    .dash-avatar { width: 58px; height: 58px; border-radius: 50%; background: rgba(245,232,210,0.15); border: 2px solid rgba(245,232,210,0.4); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 600; color: #F5E8D2; flex-shrink: 0; letter-spacing: 0.02em; box-shadow: 0 0 0 4px rgba(245,232,210,0.08); }
+    .dash-hero-text { flex: 1; }
+    .dash-hero-text h2 { font-size: 21px; font-weight: 600; color: #F5E8D2; letter-spacing: -0.01em; }
+    .dash-hero-text p { font-size: 12px; color: rgba(245,232,210,0.55); margin-top: 3px; letter-spacing: 0.03em; }
+    .dash-hero-deco { position: absolute; right: -30px; top: -30px; width: 160px; height: 160px; border-radius: 50%; background: rgba(245,232,210,0.05); pointer-events: none; }
+    .dash-hero-deco2 { position: absolute; right: 40px; bottom: -40px; width: 100px; height: 100px; border-radius: 50%; background: rgba(245,232,210,0.04); pointer-events: none; }
 
-    .dash-body { padding: 1.5rem 2rem; }
+    .dash-tabs { display: flex; gap: 6px; padding: 0.85rem 2rem 0.5rem; background: transparent; }
+    .dash-tab-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 7px 18px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all .18s; white-space: nowrap; }
+    .dash-tab-btn:hover { border-color: var(--clay-light); color: var(--clay); }
+    .dash-tab-btn.active { background: var(--clay); border-color: var(--clay); color: #F5E8D2; font-weight: 600; box-shadow: 0 2px 8px rgba(74,35,7,0.18); }
+    .dash-tab-panel { display: none; }
+    .dash-tab-panel.active { display: block; }
+    .dash-body { padding: 0.5rem 2rem 1.5rem; }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; margin-bottom: 1.75rem; }
-    .stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; border-left: 3px solid transparent; }
-    .stat-card .slabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
-    .stat-card .svalue { font-size: 24px; font-weight: 500; }
-    .stat-card.clay  { border-left-color: var(--clay-light); } .stat-card.clay .svalue  { color: var(--clay); }
-    .stat-card.green { border-left-color: var(--green-border); } .stat-card.green .svalue { color: var(--green-text); }
-    .stat-card.amber { border-left-color: var(--amber-border); } .stat-card.amber .svalue { color: var(--amber-text); }
-    .stat-card.red   { border-left-color: var(--red-border); }   .stat-card.red .svalue   { color: var(--red-text); }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.2rem 0.9rem; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden; }
+    .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+    .stat-card .slabel { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+    .stat-card .svalue { font-size: 28px; font-weight: 700; line-height: 1; }
+    .stat-card .ssub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .stat-card.clay::before  { background: var(--clay); } .stat-card.clay .svalue  { color: var(--clay); }
+    .stat-card.green::before { background: var(--green-text); } .stat-card.green .svalue { color: var(--green-text); }
+    .stat-card.amber::before { background: var(--amber-text); } .stat-card.amber .svalue { color: var(--amber-text); }
+    .stat-card.red::before   { background: var(--red-text); }   .stat-card.red .svalue   { color: var(--red-text); }
 
     .section-title { font-size: 11px; font-weight: 600; color: var(--clay-mid); text-transform: uppercase; letter-spacing: 0.08em; margin: 1.5rem 0 0.65rem; display: flex; align-items: center; gap: 8px; }
     .section-title::after { content:''; flex:1; height:0.5px; background: var(--border); }
@@ -125,6 +138,16 @@
     .badge.missing { background: var(--red-bg);   color: var(--red-text);   }
     .badge.review  { background: var(--amber-bg); color: var(--amber-text); }
     .badge.nota { background: var(--nota-bg); color: var(--nota-text); font-size: 13px; font-weight: 600; padding: 3px 11px; }
+    .badge.recup { background: #EDE0F5; color: #5A1A8A; border: 0.5px solid #9B4DB8; font-size: 11px; }
+    /* Timer de recuperación */
+    .recup-banner { background: linear-gradient(135deg, #F5E6FF 0%, #EDE0F5 100%); border: 0.5px solid #9B4DB8; border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+    .recup-banner-title { font-size: 13px; font-weight: 600; color: #5A1A8A; margin-bottom: 6px; }
+    .recup-timer { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .recup-unit { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; background: #FFFBEB; border-radius: var(--radius); padding: 8px 14px; min-width: 64px; border: 1px solid #F59E0B; }
+    .recup-num { font-size: 22px; font-weight: 700; color: #B45309; line-height: 1; }
+    .recup-label { font-size: 10px; color: #92400E; text-transform: uppercase; letter-spacing: 0.06em; }
+    .recup-expired { font-size: 13px; color: var(--red-text); font-weight: 500; }
+    .recup-nota-hint { font-size: 11px; color: #7B4BA8; font-style: italic; }
     .badge.fail { background: var(--red-bg);  color: var(--red-text);  font-size: 13px; font-weight: 600; padding: 3px 11px; }
 
     /* MODAL */
@@ -311,13 +334,17 @@
     .asist-counts { font-size: 12px; color: var(--text-muted); width: 120px; flex-shrink: 0; }
 
     @media (max-width: 640px) {
-      #page-dashboard, #page-admin { padding: 0.75rem; }
+      #page-admin { padding: 0.75rem; }
+      #page-dashboard { padding: 0; }
       .tab-content.active { padding: 0 0.25rem; }
       .login-card { padding: 1.25rem 1.25rem; }
 
       /* Header */
-      .dash-hero { padding: 1.25rem 1.25rem 1rem; }
-      .dash-body { padding: 1rem 1.25rem; }
+      .dash-hero { padding: 1.5rem 1.25rem 2rem; }
+      .dash-tabs { padding: 0.75rem 1.25rem 0.4rem; gap: 6px; overflow-x: auto; flex-wrap: nowrap; }
+      .dash-tab-btn { padding: 6px 14px; font-size: 12px; flex-shrink: 0; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .dash-body { padding: 0.5rem 1.25rem 1.25rem; }
 
       /* Admin tabs: scroll horizontal */
       .admin-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: 2px; }
@@ -405,25 +432,50 @@
 <!-- DASHBOARD ALUMNO -->
 <div id="page-dashboard" class="page">
   <div class="dash-hero">
-    <div class="dash-avatar" id="dash-avatar">?</div>
-    <div class="dash-hero-text">
-      <h2 id="dash-name"></h2>
-      <p id="dash-dni"></p>
+    <div class="dash-hero-deco"></div>
+    <div class="dash-hero-deco2"></div>
+    <div class="dash-hero-inner">
+      <div class="dash-avatar" id="dash-avatar">?</div>
+      <div class="dash-hero-text">
+        <h2 id="dash-name"></h2>
+        <p id="dash-dni"></p>
+      </div>
     </div>
   </div>
+  <div class="dash-tabs">
+    <button class="dash-tab-btn active" onclick="switchDashTab('dtab-resumen',this)">Resumen</button>
+    <button class="dash-tab-btn" onclick="switchDashTab('dtab-examenes',this)">Exámenes</button>
+    <button class="dash-tab-btn" onclick="switchDashTab('dtab-asistencia',this)">Asistencia</button>
+  </div>
   <div class="dash-body">
-    <div class="stats-grid" id="stats-grid"></div>
-    <div class="section-title">Exámenes completados</div>
-    <div class="exam-list" id="list-done"></div>
-    <div class="section-title">Exámenes pendientes</div>
-    <div class="exam-list" id="list-missing"></div>
-    <div id="section-review" style="display:none;">
-      <div class="section-title">En revisión</div>
-      <div class="exam-list" id="list-review"></div>
+
+    <!-- Pestaña Resumen -->
+    <div id="dtab-resumen" class="dash-tab-panel active">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div id="recup-banner" style="display:none;" class="recup-banner">
+        <div class="recup-banner-title">Plazo de recuperación</div>
+        <div style="font-size:13px;color:#5A1A8A;margin-bottom:4px;">Tienes hasta el <strong>26 de junio de 2026</strong> a las 11:59 PM para rendir tus exámenes de recuperación.</div>
+        <div id="recup-timer-wrap"></div>
+      </div>
     </div>
 
-    <div class="section-title" style="margin-top:1.5rem;">Asistencia</div>
-    <div id="dash-asist"></div>
+    <!-- Pestaña Exámenes -->
+    <div id="dtab-examenes" class="dash-tab-panel" style="display:none;">
+      <div class="section-title">Exámenes completados</div>
+      <div class="exam-list" id="list-done"></div>
+      <div class="section-title">Exámenes pendientes</div>
+      <div class="exam-list" id="list-missing"></div>
+      <div id="section-review" style="display:none;">
+        <div class="section-title">En revisión</div>
+        <div class="exam-list" id="list-review"></div>
+      </div>
+    </div>
+
+    <!-- Pestaña Asistencia -->
+    <div id="dtab-asistencia" class="dash-tab-panel" style="display:none;">
+      <div id="dash-asist"></div>
+    </div>
+
   </div>
 </div>
 
@@ -815,6 +867,8 @@ let registrosFetching = false, asistenciaFetching = false;
 let registrosCallbacks = [], asistenciaCallbacks = [];
 const PAGE_SIZE = 15;
 const pageState = { alumnos: 1, notas: 1, confirmar: 1, historial: 1 };
+const RECUP_DEADLINE = new Date('2026-06-26T23:59:59');
+let recupTimerInterval = null;
 
 let currentUser = null;
 let isAdmin = false;
@@ -1031,6 +1085,34 @@ function statusBadge(estado) {
 /* ══════════════════════════════════════════════
    DASHBOARD ALUMNO
 ══════════════════════════════════════════════ */
+function iniciarTimerRecuperacion() {
+  if (recupTimerInterval) clearInterval(recupTimerInterval);
+  function tick() {
+    const ahora = new Date();
+    const diff = RECUP_DEADLINE - ahora;
+    const wrap = document.getElementById('recup-timer-wrap');
+    if (!wrap) { clearInterval(recupTimerInterval); return; }
+    if (diff <= 0) {
+      clearInterval(recupTimerInterval);
+      wrap.innerHTML = `<span class="recup-expired">El período de recuperación ha finalizado.</span>`;
+      return;
+    }
+    const dias  = Math.floor(diff / 86400000);
+    const horas = Math.floor((diff % 86400000) / 3600000);
+    const mins  = Math.floor((diff % 3600000)  / 60000);
+    const segs  = Math.floor((diff % 60000)     / 1000);
+    wrap.innerHTML = `
+      <div class="recup-timer">
+        <div class="recup-unit"><span class="recup-num">${String(dias).padStart(2,'0')}</span><span class="recup-label">días</span></div>
+        <div class="recup-unit"><span class="recup-num">${String(horas).padStart(2,'0')}</span><span class="recup-label">horas</span></div>
+        <div class="recup-unit"><span class="recup-num">${String(mins).padStart(2,'0')}</span><span class="recup-label">min</span></div>
+        <div class="recup-unit"><span class="recup-num">${String(segs).padStart(2,'0')}</span><span class="recup-label">seg</span></div>
+      </div>`;
+  }
+  tick();
+  recupTimerInterval = setInterval(tick, 1000);
+}
+
 function renderDashboard() {
   const a = currentUser;
   const partes = a.nombre.trim().split(/\s+/);
@@ -1047,11 +1129,40 @@ function renderDashboard() {
   const notas = hechos.filter(r=>r.nota!==null).map(r=>r.nota);
   const prom = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : "—";
 
+  const aprobados = hechos.filter(r => r.estado === "aprobado").length;
   document.getElementById("stats-grid").innerHTML = `
-    <div class="stat-card clay"><div class="slabel">Exámenes dados</div><div class="svalue">${hechos.length}/${EXAMENES.length}</div></div>
-    <div class="stat-card red"><div class="slabel">Pendientes</div><div class="svalue">${faltantes.length}</div></div>
-    <div class="stat-card amber"><div class="slabel">En revisión</div><div class="svalue">${revision.length}</div></div>
-    <div class="stat-card green"><div class="slabel">Promedio general</div><div class="svalue">${prom}</div></div>`;
+    <div class="stat-card clay">
+      <div class="slabel">Exámenes dados</div>
+      <div class="svalue">${hechos.length}<span style="font-size:16px;font-weight:500;opacity:.5">/${EXAMENES.length}</span></div>
+      <div class="ssub">${aprobados} aprobado${aprobados!==1?'s':''}</div>
+    </div>
+    <div class="stat-card red">
+      <div class="slabel">Pendientes</div>
+      <div class="svalue">${faltantes.length}</div>
+      <div class="ssub">${faltantes.length === 0 ? '¡Sin pendientes!' : 'por rendir'}</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="slabel">En revisión</div>
+      <div class="svalue">${revision.length}</div>
+      <div class="ssub">${revision.length === 0 ? 'Todo revisado' : 'esperando nota'}</div>
+    </div>
+    <div class="stat-card green">
+      <div class="slabel">Promedio general</div>
+      <div class="svalue">${prom ?? '—'}</div>
+      <div class="ssub">sobre ${EXAMENES.length} exámenes</div>
+    </div>`;
+
+  // temporizador de recuperación: mostrar si hay faltantes y aún no venció el plazo
+  const banner = document.getElementById("recup-banner");
+  if (faltantes.length > 0 && new Date() <= RECUP_DEADLINE) {
+    banner.style.display = "block";
+    iniciarTimerRecuperacion();
+  } else {
+    banner.style.display = "none";
+  }
+
+  const svgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const svgX     = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
   // completados
   const doneEl = document.getElementById("list-done");
@@ -1060,11 +1171,18 @@ function renderDashboard() {
     : hechos.map(r => {
         const ex = EXAMENES.find(e=>e.id===r.exam_id);
         const ok = r.estado==="aprobado";
-        const nb = r.nota!==null ? (ok?`<span class="badge nota">${r.nota}/20</span>`:`<span class="badge fail">${r.nota}/20</span>`) : "";
+        const maxN = [6,23].includes(r.exam_id) ? 40 : 20;
+        const recupBadge = r.recuperacion ? `<span class="badge recup">Recuperación</span>` : "";
+        const nb = r.nota !== null
+          ? (ok ? `<span class="badge nota">${r.nota}/${maxN}</span>` : `<span class="badge fail">${r.nota}/${maxN}</span>`)
+          : "";
         return `<div class="exam-row">
-          <div class="exam-icon ${ok?'done':'missing'}">${ok?`<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`:`<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`}</div>
-          <div class="exam-info"><div class="exam-name">${ex.nombre}</div><div class="exam-sub">${ok?"Aprobado":"Desaprobado"}</div></div>
-          ${nb}
+          <div class="exam-icon ${ok?'done':'missing'}">${ok ? svgCheck : svgX}</div>
+          <div class="exam-info">
+            <div class="exam-name">${ex.nombre}</div>
+            <div class="exam-sub">${ok?"Aprobado":"Desaprobado"}${r.recuperacion?' · Examen de recuperación':''}</div>
+          </div>
+          ${recupBadge}${nb}
         </div>`;
       }).join("");
 
@@ -1085,11 +1203,16 @@ function renderDashboard() {
     secRev.style.display = "block";
     document.getElementById("list-review").innerHTML = revision.map(r => {
       const ex = EXAMENES.find(e=>e.id===r.exam_id);
-      const nb = r.nota !== null ? `<span class="badge nota">${r.nota}/20</span>` : "";
+      const maxN = [6,23].includes(r.exam_id) ? 40 : 20;
+      const recupBadge = r.recuperacion ? `<span class="badge recup">Recuperación</span>` : "";
+      const nb = r.nota !== null ? `<span class="badge nota">${r.nota}/${maxN}</span>` : "";
       return `<div class="exam-row clickable" onclick="openModal(${ex.id})">
         <div class="exam-icon review">…</div>
-        <div class="exam-info"><div class="exam-name">${ex.nombre}</div><div class="exam-sub">Nota en revisión</div></div>
-        ${nb}
+        <div class="exam-info">
+          <div class="exam-name">${ex.nombre}</div>
+          <div class="exam-sub">Nota en revisión${r.recuperacion?' · Recuperación':''}</div>
+        </div>
+        ${recupBadge}${nb}
         <span class="badge review">En revisión</span>
       </div>`;
     }).join("");
@@ -1452,19 +1575,23 @@ function renderNotasExamen() {
   const maxN = [6,23].includes(examId) ? 40 : 20;
   let rows = ALUMNOS.map(a => {
     const reg = REGISTROS.find(r=>r.dni===a.dni&&r.exam_id===examId);
-    return { nombre: a.nombre, dni: a.dni, estado: reg ? reg.estado : "pendiente", notaVal: reg&&reg.nota!==null ? reg.nota : null };
+    return { nombre: a.nombre, dni: a.dni, estado: reg ? reg.estado : "pendiente",
+      notaVal: reg&&reg.nota!==null ? reg.nota : null, recuperacion: reg ? !!reg.recuperacion : false };
   });
   rows = applySort(rows, 'notas', (r, col) => ({
     nombre: r.nombre, dni: r.dni, estado: r.estado, nota: r.notaVal ?? -1
   })[col] ?? '');
   const { items, cur, pages, total } = paginate(rows, 'notas');
   const tbody = document.getElementById("tbody-notas");
-  tbody.innerHTML = items.map(r => `<tr>
-    <td style="font-weight:500;" class="wrap">${r.nombre}</td>
-    <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
-    <td>${statusBadge(r.estado)}</td>
-    <td style="font-weight:500;">${r.notaVal !== null ? r.notaVal+'/'+maxN : '—'}</td>
-  </tr>`).join("");
+  tbody.innerHTML = items.map(r => {
+    const recupBadge = r.recuperacion ? `<span class="badge recup" style="margin-left:4px;">Recup.</span>` : '';
+    return `<tr>
+      <td style="font-weight:500;" class="wrap">${r.nombre}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
+      <td>${statusBadge(r.estado)}${recupBadge}</td>
+      <td style="font-weight:500;">${r.notaVal !== null ? r.notaVal+'/'+maxN : '—'}</td>
+    </tr>`;
+  }).join("");
   document.getElementById("pag-notas").innerHTML = renderPagination('notas', cur, pages, total);
 
   // resumen del examen
@@ -1543,7 +1670,8 @@ function renderConfirmar() {
     EXAMENES.forEach(ex => {
       const reg = REGISTROS.find(r=>r.dni===a.dni&&r.exam_id===ex.id);
       rows.push({ nombre:a.nombre, dni:a.dni, examen:ex.nombre, exam_id:ex.id,
-        estado: reg?reg.estado:"pendiente", nota: reg?reg.nota:null });
+        estado: reg?reg.estado:"pendiente", nota: reg?reg.nota:null,
+        recuperacion: reg ? !!reg.recuperacion : false });
     });
   });
 
@@ -1565,13 +1693,16 @@ function renderConfirmar() {
   tbody.innerHTML = items.map(r => {
     const canAct = r.estado==="revision";
     const maxNota = [6,23].includes(r.exam_id) ? 40 : 20;
+    const recupBadge = r.recuperacion ? `<span class="badge recup" style="margin-left:4px;">Recup.</span>` : '';
+    const notaHint = r.recuperacion && canAct
+      ? `<div class="recup-nota-hint">Nota obtenida (se aplicará 80%)</div>` : '';
     const notaInput = (r.estado==="revision"||r.estado==="aprobado"||r.estado==="desaprobado")
-      ? `<input class="nota-input" type="number" min="0" max="${maxNota}" placeholder="0-${maxNota}" value="${r.nota??''}" id="ni-${r.dni}-${r.exam_id}" />`
+      ? `<input class="nota-input" type="number" min="0" max="${maxNota}" placeholder="0-${maxNota}" value="${r.nota??''}" id="ni-${r.dni}-${r.exam_id}" />${notaHint}`
       : `<span style="color:var(--text-hint)">—</span>`;
     return `<tr>
       <td style="font-weight:500;" class="wrap">${r.nombre}</td>
       <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${r.dni}</td>
-      <td style="max-width:180px;" class="wrap">${r.examen}</td>
+      <td style="max-width:180px;" class="wrap">${r.examen}${recupBadge}</td>
       <td>${statusBadge(r.estado)}</td>
       <td>${notaInput}</td>
       <td><div class="actions-cell">
@@ -1988,6 +2119,14 @@ function initAsistencia() {
 }
 
 /* ── SUB-PESTAÑAS ESTADÍSTICAS ── */
+function switchDashTab(id, btn) {
+  document.querySelectorAll('.dash-tab-panel').forEach(p => { p.style.display='none'; p.classList.remove('active'); });
+  document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById(id);
+  if (panel) { panel.style.display='block'; panel.classList.add('active'); }
+  btn.classList.add('active');
+}
+
 function switchStatsTab(id, btn) {
   ['resumen','ranking','examenes'].forEach(p => {
     document.getElementById('stats-panel-' + p).style.display = p === id ? '' : 'none';
@@ -2050,10 +2189,11 @@ function abrirDetalleAlumno(dni) {
     else if (estado === "desaprobado") { notaStr = `${reg.nota}/${maxN}`; notaCls = "des"; icono = iconX; }
     else if (estado === "revision")    { notaStr = reg.nota !== null ? `${reg.nota}/${maxN}` : "—"; notaCls = "rev"; icono = iconDots; }
 
+    const recupBadge = (reg && reg.recuperacion) ? `<span class="badge recup" style="font-size:10px;padding:2px 5px;">Recup.</span>` : '';
     return `<div class="alumno-exam-row">
       <span class="ae-num">${i + 1}</span>
       <span class="exam-icon ${notaCls === 'ap' ? 'done' : notaCls === 'des' ? 'missing' : notaCls === 'rev' ? 'review' : ''}" style="width:28px;height:28px;font-size:12px;">${icono}</span>
-      <span class="ae-name">${ex.nombre}</span>
+      <span class="ae-name">${ex.nombre}${recupBadge}</span>
       <span class="ae-nota ${notaCls}">${notaStr}</span>
     </div>`;
   }).join("");
