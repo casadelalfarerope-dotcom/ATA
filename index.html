@@ -1778,7 +1778,7 @@ function renderConfirmar() {
     const maxNota = [6,23].includes(r.exam_id) ? 40 : 20;
     const recupBadge = r.recuperacion ? `<span class="badge recup" style="margin-left:4px;">Recup.</span>` : '';
     const notaHint = r.recuperacion && canAct
-      ? `<div class="recup-nota-hint">Nota obtenida (se aplicará 80%)</div>` : '';
+      ? `<div class="recup-nota-hint">Nota ya reducida al 80% (período de recuperación)</div>` : '';
     const notaInput = (r.estado==="revision"||r.estado==="aprobado"||r.estado==="desaprobado")
       ? `<input class="nota-input" type="number" min="0" max="${maxNota}" placeholder="0-${maxNota}" value="${r.nota??''}" id="ni-${r.dni}-${r.exam_id}" />${notaHint}`
       : `<span style="color:var(--text-hint)">—</span>`;
