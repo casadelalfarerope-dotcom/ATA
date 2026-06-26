@@ -1099,7 +1099,7 @@ function avgPill(val) {
   if (val === null) return '<span class="avg-pill none">Sin notas</span>';
   const n = parseFloat(val);
   const cls = n >= 14 ? "good" : n >= 11 ? "mid" : "bad";
-  return `<span class="avg-pill ${cls}">${n.toFixed(1)}</span>`;
+  return `<span class="avg-pill ${cls}">${parseFloat(n.toFixed(2))}</span>`;
 }
 
 function statusBadge(estado) {
@@ -1238,7 +1238,7 @@ function renderDashboard() {
         const fechaStr = fmtFechaExamen(r.fecha_examen);
         const sub1 = `${ok?"Aprobado":"Desaprobado"}${fechaStr ? ' · ' + fechaStr : ''}`;
         const sub2 = r.recuperacion
-          ? `<div class="exam-sub recup-hint">Rendido fuera de fecha — nota máxima alcanzable: 80% (${Math.round(maxN*0.8)}/${maxN})</div>`
+          ? `<div class="exam-sub recup-hint">Rendido fuera de fecha — nota máxima alcanzable: 80% (${parseFloat((maxN*0.8).toFixed(2))}/${maxN})</div>`
           : '';
         return `<div class="exam-row clickable" onclick="openModal(${r.exam_id})">
           <div class="exam-icon ${ok?'done':'missing'}">${ok ? svgCheck : svgX}</div>
@@ -1259,7 +1259,7 @@ function renderDashboard() {
     : faltantes.map(ex => {
         const maxN = [6,23].includes(ex.id) ? 40 : 20;
         const recupHint = esRecupPeriod
-          ? `<div class="exam-sub recup-hint" style="margin-top:4px;">Período de recuperación — nota máxima: ${Math.round(maxN*0.8)}/${maxN} (80%)</div>`
+          ? `<div class="exam-sub recup-hint" style="margin-top:4px;">Período de recuperación — nota máxima: ${parseFloat((maxN*0.8).toFixed(2))}/${maxN} (80%)</div>`
           : '';
         return `<div class="exam-row clickable" onclick="openModal(${ex.id})">
           <div class="exam-icon missing">!</div>
@@ -1283,7 +1283,7 @@ function renderDashboard() {
       const nb = r.nota !== null ? `<span class="badge nota">${r.nota}/${maxN}</span>` : "";
       const fechaStr = fmtFechaExamen(r.fecha_examen);
       const sub2 = r.recuperacion
-        ? `<div class="exam-sub recup-hint">Rendido fuera de fecha — nota máxima alcanzable: 80% (${Math.round(maxN*0.8)}/${maxN})</div>`
+        ? `<div class="exam-sub recup-hint">Rendido fuera de fecha — nota máxima alcanzable: 80% (${parseFloat((maxN*0.8).toFixed(2))}/${maxN})</div>`
         : '';
       return `<div class="exam-row clickable" onclick="openModal(${ex.id})">
         <div class="exam-icon review">…</div>
@@ -2274,7 +2274,7 @@ function abrirDetalleAlumno(dni) {
     <div class="alumno-modal-stat"><div class="ms-label">Desaprobados</div><div class="ms-val" style="color:var(--red-text)">${desap}</div></div>
     <div class="alumno-modal-stat"><div class="ms-label">En revisión</div><div class="ms-val" style="color:var(--amber-text)">${revision}</div></div>
     <div class="alumno-modal-stat"><div class="ms-label">Pendientes</div><div class="ms-val" style="color:var(--text-muted)">${pendientes}</div></div>
-    <div class="alumno-modal-stat"><div class="ms-label">Promedio</div><div class="ms-val">${prom !== null ? prom : "—"}</div></div>
+    <div class="alumno-modal-stat"><div class="ms-label">Promedio</div><div class="ms-val">${prom !== null ? parseFloat(prom.toFixed(2)) : "—"}</div></div>
   `;
 
   const iconCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
