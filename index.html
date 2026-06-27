@@ -171,6 +171,9 @@
     .asist-detail-badge.t { background:var(--amber-bg); color:var(--amber-text); }
     .asist-detail-badge.a { background:var(--red-bg);   color:var(--red-text);   }
     .exam-sub.recup-hint { color: #92400E; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 5px; padding: 3px 7px; margin-top: 4px; font-size: 11px; display: inline-block; }
+    .recup-group-note { display:flex; align-items:flex-start; gap:8px; background:#FFF7ED; border:1px solid #FED7AA; border-radius:var(--radius); padding:10px 12px; font-size:12px; color:#92400E; margin-bottom:10px; line-height:1.5; }
+    .recup-group-note svg { flex-shrink:0; margin-top:1px; }
+    .exam-row-disabled { background:var(--surface); border:0.5px dashed var(--border); border-radius:var(--radius-lg); padding:0.85rem 1.1rem; display:flex; align-items:center; gap:12px; opacity:.75; cursor:default; }
     .badge.fail { background: var(--red-bg);  color: var(--red-text);  font-size: 13px; font-weight: 600; padding: 3px 11px; }
 
     /* MODAL */
@@ -1223,44 +1226,91 @@ function renderDashboard() {
   const svgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
   const svgX     = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
-  // completados
+  // completados: separar normales y recuperación
+  const hechosNorm  = hechos.filter(r => !r.recuperacion);
+  const hechosRecup = hechos.filter(r => r.recuperacion);
+
+  function buildExamRow(r) {
+    const ex   = EXAMENES.find(e=>e.id===r.exam_id);
+    const ok   = r.estado==="aprobado";
+    const maxN = [6,23].includes(r.exam_id) ? 40 : 20;
+    const nb   = r.nota !== null
+      ? (ok ? `<span class="badge nota">${r.nota}/${maxN}</span>` : `<span class="badge fail">${r.nota}/${maxN}</span>`)
+      : "";
+    const fechaStr = fmtFechaExamen(r.fecha_examen);
+    const sub1 = `${ok?"Aprobado":"Desaprobado"}${fechaStr ? ' · ' + fechaStr : ''}`;
+    return `<div class="exam-row clickable" onclick="openModal(${r.exam_id})">
+      <div class="exam-icon ${ok?'done':'missing'}">${ok ? svgCheck : svgX}</div>
+      <div class="exam-info">
+        <div class="exam-name">${ex.nombre}</div>
+        <div class="exam-sub">${sub1}</div>
+      </div>
+      ${nb}
+    </div>`;
+  }
+
   const doneEl = document.getElementById("list-done");
-  doneEl.innerHTML = hechos.length === 0
-    ? `<div class="exam-row"><span style="color:var(--text-muted);font-size:13px;">Aún no completaste ningún examen.</span></div>`
-    : hechos.map(r => {
-        const ex = EXAMENES.find(e=>e.id===r.exam_id);
-        const ok = r.estado==="aprobado";
+  doneEl.innerHTML = hechosNorm.length === 0
+    ? `<div class="exam-row"><span style="color:var(--text-muted);font-size:13px;">Aún no completaste ningún examen normal.</span></div>`
+    : hechosNorm.map(buildExamRow).join("");
+
+  // sección recuperación
+  let secRecup = document.getElementById("section-recup");
+  if (!secRecup) {
+    secRecup = document.createElement("div");
+    secRecup.id = "section-recup";
+    document.getElementById("list-done").after(secRecup);
+  }
+  if (hechosRecup.length > 0) {
+    secRecup.innerHTML = `
+      <div class="section-title" style="margin-top:1.5rem;">Exámenes de recuperación</div>
+      <div class="recup-group-note">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Estos exámenes fueron rendidos fuera de la fecha estipulada (después de mayo 2026), por lo que su nota máxima alcanzable es el <strong>80%</strong> de la nota original.
+      </div>
+      <div class="exam-list">${hechosRecup.map(r => {
+        const ex   = EXAMENES.find(e=>e.id===r.exam_id);
+        const ok   = r.estado==="aprobado";
         const maxN = [6,23].includes(r.exam_id) ? 40 : 20;
-        const recupBadge = r.recuperacion ? `<span class="badge recup">Recuperación</span>` : "";
-        const nb = r.nota !== null
+        const nb   = r.nota !== null
           ? (ok ? `<span class="badge nota">${r.nota}/${maxN}</span>` : `<span class="badge fail">${r.nota}/${maxN}</span>`)
           : "";
         const fechaStr = fmtFechaExamen(r.fecha_examen);
         const sub1 = `${ok?"Aprobado":"Desaprobado"}${fechaStr ? ' · ' + fechaStr : ''}`;
-        const sub2 = r.recuperacion
-          ? `<div class="exam-sub recup-hint">Rendido fuera de fecha — nota máxima alcanzable: 80% (${parseFloat((maxN*0.8).toFixed(2))}/${maxN})</div>`
-          : '';
         return `<div class="exam-row clickable" onclick="openModal(${r.exam_id})">
           <div class="exam-icon ${ok?'done':'missing'}">${ok ? svgCheck : svgX}</div>
           <div class="exam-info">
             <div class="exam-name">${ex.nombre}</div>
             <div class="exam-sub">${sub1}</div>
-            ${sub2}
+            <div class="exam-sub" style="color:#92400E;">Nota máxima posible: ${parseFloat((maxN*0.8).toFixed(2))}/${maxN}</div>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">${recupBadge}${nb}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="badge recup">Recuperación</span>${nb}</div>
         </div>`;
-      }).join("");
+      }).join("")}</div>`;
+  } else {
+    secRecup.innerHTML = "";
+  }
 
   // pendientes
-  const esRecupPeriod = new Date() <= RECUP_DEADLINE;
+  const ahora = new Date();
+  const esRecupPeriod  = ahora <= RECUP_DEADLINE;
+  const deadlineVencio = !esRecupPeriod;
   const missingEl = document.getElementById("list-missing");
   missingEl.innerHTML = faltantes.length === 0
     ? `<div class="exam-row"><span style="color:var(--text-muted);font-size:13px;">¡Completaste todos los exámenes!</span></div>`
     : faltantes.map(ex => {
         const maxN = [6,23].includes(ex.id) ? 40 : 20;
-        const recupHint = esRecupPeriod
-          ? `<div class="exam-sub recup-hint" style="margin-top:4px;">Período de recuperación — nota máxima: ${parseFloat((maxN*0.8).toFixed(2))}/${maxN} (80%)</div>`
-          : '';
+        if (deadlineVencio) {
+          return `<div class="exam-row exam-row-disabled">
+            <div class="exam-icon missing" style="opacity:.45;">!</div>
+            <div class="exam-info">
+              <div class="exam-name" style="opacity:.6;">${ex.nombre}</div>
+              <div class="exam-sub" style="color:var(--red-text);">El período de recuperación ha finalizado — ya no es posible rendir este examen</div>
+            </div>
+            <span class="badge missing" style="opacity:.5;">Vencido</span>
+          </div>`;
+        }
+        const recupHint = `<div class="exam-sub recup-hint" style="margin-top:4px;">Período de recuperación — nota máxima: ${parseFloat((maxN*0.8).toFixed(2))}/${maxN} (80%)</div>`;
         return `<div class="exam-row clickable" onclick="openModal(${ex.id})">
           <div class="exam-icon missing">!</div>
           <div class="exam-info">
@@ -1304,23 +1354,54 @@ function renderDashboard() {
 ══════════════════════════════════════════════ */
 function openModal(examId) {
   currentExamId = examId;
-  const ex = EXAMENES.find(e=>e.id===examId);
-  const reg = REGISTROS.find(r=>r.dni===currentUser.dni&&r.exam_id===examId);
-  document.getElementById("modal-title").textContent = ex.nombre;
+  const ex     = EXAMENES.find(e=>e.id===examId);
+  const reg    = REGISTROS.find(r=>r.dni===currentUser.dni&&r.exam_id===examId);
+  const maxN   = [6,23].includes(examId) ? 40 : 20;
+  const estado = reg ? reg.estado : "pendiente";
+  const vencido = new Date() > RECUP_DEADLINE;
+
+  document.getElementById("modal-title").textContent   = ex.nombre;
   document.getElementById("modal-summary").textContent = ex.resumen || "Sin resumen de clase.";
-  document.getElementById("modal-link").textContent = ex.enlace;
-  document.getElementById("modal-link").href = ex.enlace;
-  const btn = document.getElementById("modal-btn");
+
+  const linkEl = document.getElementById("modal-link");
+  const btn    = document.getElementById("modal-btn");
   const notice = document.getElementById("modal-review-notice");
-  if (reg && reg.estado==="revision") {
-    const notaTexto = reg.nota !== null ? ` — Nota: ${reg.nota}/20` : "";
+
+  // Mostrar el enlace solo si hay plazo o ya dio el examen
+  if (!vencido || estado !== "pendiente") {
+    linkEl.textContent = ex.enlace;
+    linkEl.href        = ex.enlace;
+    linkEl.style.display = "";
+  } else {
+    linkEl.style.display = "none";
+  }
+
+  notice.style.display = "none";
+  notice.textContent   = "";
+
+  if (estado === "aprobado" || estado === "desaprobado") {
+    const notaStr = reg.nota !== null ? `${reg.nota}/${maxN}` : "—";
+    const estadoLabel = estado === "aprobado" ? "Aprobado" : "Desaprobado";
+    btn.textContent = "Ya completaste este examen"; btn.className = "btn-take-exam disabled"; btn.onclick = null;
+    notice.style.display = "block";
+    notice.textContent   = `${estadoLabel} · Nota: ${notaStr}${reg.recuperacion ? " (recuperación)" : ""}`;
+  } else if (estado === "revision") {
+    const notaStr = reg.nota !== null ? ` · Nota: ${reg.nota}/${maxN}` : "";
     btn.textContent = "Ya enviaste este examen"; btn.className = "btn-take-exam disabled"; btn.onclick = null;
     notice.style.display = "block";
-    notice.textContent = "Tu examen está siendo revisado." + notaTexto;
+    notice.textContent   = "Tu examen está siendo revisado" + notaStr;
+  } else if (vencido) {
+    // pendiente pero deadline vencido
+    btn.textContent = "Período de recuperación finalizado"; btn.className = "btn-take-exam disabled"; btn.onclick = null;
+    notice.style.display = "block";
+    notice.textContent   = "Ya no es posible rendir este examen. El plazo venció el 26 de junio de 2026.";
+    notice.style.color   = "var(--red-text)";
   } else {
     btn.textContent = "Ir al examen →"; btn.className = "btn-take-exam";
-    btn.onclick = takeExam; notice.style.display = "none";
+    btn.onclick     = takeExam;
+    notice.style.color = "";
   }
+
   document.getElementById("exam-modal").classList.add("open");
 }
 
