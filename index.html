@@ -1112,7 +1112,8 @@ function getRegistros(dni) { return REGISTROS.filter(r => r.dni === dni); }
 
 function getPromedio(dni) {
   const notas = REGISTROS.filter(r => r.dni === dni && r.nota !== null).map(r => r.nota);
-  return notas.length ? (notas.reduce((a,b)=>a+b,0) / notas.length) : null;
+  const total = EXAMENES.length;
+  return total ? (notas.reduce((a,b)=>a+b,0) / total) : null;
 }
 
 function avgPill(val) {
@@ -1173,7 +1174,7 @@ function renderDashboard() {
   const hechoIds = regs.filter(r => r.estado !== "pendiente").map(r => r.exam_id);
   const faltantes = EXAMENES.filter(e => !hechoIds.includes(e.id));
   const notas = hechos.filter(r=>r.nota!==null).map(r=>r.nota);
-  const promRaw = notas.length ? notas.reduce((a,b)=>a+b,0)/notas.length : null;
+  const promRaw = EXAMENES.length ? notas.reduce((a,b)=>a+b,0)/EXAMENES.length : null;
   const prom = promRaw !== null ? parseFloat(promRaw.toFixed(2)) : "—";
 
   const aprobados = hechos.filter(r => r.estado === "aprobado").length;
@@ -2291,7 +2292,7 @@ function buildRanking_(soloCompletos) {
   return ALUMNOS.map(a => {
     const regs = getRegistros(a.dni).filter(r => r.nota !== null && !isNaN(r.nota));
     const notas = regs.map(r => r.nota);
-    const prom = notas.length ? +(notas.reduce((s,n) => s+n, 0) / notas.length).toFixed(2) : null;
+    const prom = totalExams ? +(notas.reduce((s,n) => s+n, 0) / totalExams).toFixed(2) : null;
     return { nombre: a.nombre, prom, examsDados: notas.length };
   })
   .filter(a => a.prom !== null && (!soloCompletos || a.examsDados >= totalExams))
